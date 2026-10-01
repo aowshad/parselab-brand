@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. The platform UI stays neutral: brand colors only appear
+ * inside assets, the brand icon tile and swatches. Components use the
+ * Tailwind utilities generated below (bg-ground, text-ink, border-hairline…),
+ * never raw hex values.
+ */
+@theme {
+  --color-ground: #fafafa;
+  --color-surface: #ffffff;
+  --color-ink: #0b0d12;
+  --color-ink-soft: #16181f;
+  --color-muted: #5b616e; /* 5.95:1 on ground, 5.5:1 on hover; keep >= 4.5:1 */
+  --color-hairline: #ecedf0;
+  --color-control: #e4e6ea;
+  --color-hover: #f0f1f3;
+  --color-track: #eeeff2;
+  --color-success: #22c55e;
+  --color-focus: #2b5cff;
+
+  --radius-card: 16px;
+  --radius-button: 10px;
+  --radius-button-sm: 9px;
+  --radius-segment: 12px;
+  --radius-segment-item: 9px;
+  --radius-stage: 20px;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* next/font sets these on <html>, so they must resolve where used. */
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+  --duration-stage: 400ms;
+
+  --topbar-height: 64px;
+  --sidebar-width: 248px;
+}
+
+@layer base {
+  html {
+    scroll-padding-top: calc(var(--topbar-height) + 24px);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
