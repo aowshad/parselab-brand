@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "ParseLab brand assets & guidelines platform",
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx scripts/validate-content.ts && next dev",
+    "prebuild": "tsx scripts/validate-content.ts",
     "build": "next build",
     "start": "npx serve out",
+    "validate": "tsx scripts/validate-content.ts",
     "typecheck": "tsc --noEmit"
   },
   "devEngines": {

@@ -1,0 +1,72 @@
+{
+  "slug": "parselab",
+  "name": "ParseLab",
+  "description": "Shopify app studio building tools that help merchants sell more.",
+  "status": "published",
+  "order": 0,
+  "updatedAt": "2026-10-01",
+  "contact": "brand@parselab.com",
+  "logoGroups": [
+    {
+      "key": "full",
+      "label": "Full Logo",
+      "description": "Mark + wordmark. The default logo.",
+      "variants": [
+        { "id": "full-dark-bg",  "name": "For Dark Background",  "file": "full-dark-bg.svg",  "previewBg": "#0B0D12", "usage": "Primary lockup for dark surfaces, dark UI, video and photography." },
+        { "id": "full-light-bg", "name": "For Light Background", "file": "full-light-bg.svg", "previewBg": "#FFFFFF", "usage": "Primary lockup for white and light surfaces. Use this one by default." },
+        { "id": "full-black",    "name": "Black",                "file": "full-black.svg",    "previewBg": "#F3F4F6", "usage": "Single-color version for one-color print." },
+        { "id": "full-white",    "name": "White",                "file": "full-white.svg",    "previewBg": "#16181F", "usage": "Single-color version for dark or busy backgrounds." }
+      ]
+    },
+    {
+      "key": "mark",
+      "label": "Mark",
+      "description": "Symbol only, for tight spaces.",
+      "variants": [
+        { "id": "mark-brand", "name": "Brand Color", "file": "mark-brand.svg", "previewBg": "#FFFFFF", "usage": "Use when the wordmark appears nearby or space is too tight for the full logo." },
+        { "id": "mark-black", "name": "Black",       "file": "mark-black.svg", "previewBg": "#F3F4F6", "usage": "Single-color mark for one-color print, embossing and stamps." },
+        { "id": "mark-white", "name": "White",       "file": "mark-white.svg", "previewBg": "#16181F", "usage": "Single-color mark for dark or busy backgrounds." }
+      ]
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "description": "App icon and favicon tile.",
+      "variants": [
+        { "id": "icon-brand", "name": "Brand Color", "file": "icon-brand.svg", "previewBg": "#F3F4F6", "usage": "App listings, favicons and anywhere the brand needs a self-contained tile." },
+        { "id": "icon-black", "name": "Black",       "file": "icon-black.svg", "previewBg": "#F3F4F6", "usage": "Monochrome tile for light surfaces where the brand blue would clash." },
+        { "id": "icon-white", "name": "White",       "file": "icon-white.svg", "previewBg": "#16181F", "usage": "Monochrome tile for dark surfaces." }
+      ]
+    },
+    {
+      "key": "square",
+      "label": "Square",
+      "description": "Social avatars and square slots.",
+      "variants": [
+        { "id": "square-brand", "name": "Brand Color", "file": "square-brand.svg", "previewBg": "#F3F4F6", "usage": "Profile pictures on platforms that apply their own corner rounding." },
+        { "id": "square-dark",  "name": "Dark",        "file": "square-dark.svg",  "previewBg": "#F3F4F6", "usage": "Dark avatar for platforms with a light interface." }
+      ]
+    },
+    {
+      "key": "circle",
+      "label": "Circle",
+      "description": "Circular profile crops.",
+      "variants": [
+        { "id": "circle-brand", "name": "Brand Color", "file": "circle-brand.svg", "previewBg": "#F3F4F6", "usage": "Pre-cropped avatar for circular slots, so the mark is never clipped." },
+        { "id": "circle-dark",  "name": "Dark",        "file": "circle-dark.svg",  "previewBg": "#F3F4F6", "usage": "Dark circular avatar for light interfaces." }
+      ]
+    }
+  ],
+  "palettes": [
+    {
+      "name": "Main Palette",
+      "colors": [
+        { "name": "Blue",   "role": "Primary",              "hex": "#2B5CFF" },
+        { "name": "Orange", "role": "Accent",               "hex": "#FF7A1A" },
+        { "name": "Black",  "role": "Text & dark surfaces", "hex": "#0B0D12" },
+        { "name": "White",  "role": "Backgrounds",          "hex": "#FFFFFF" }
+      ]
+    }
+  ],
+  "sections": { "typography": "planned", "guidelines": "planned", "screenshots": "planned" }
+}
