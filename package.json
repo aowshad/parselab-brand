@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "ParseLab brand assets & guidelines platform",
   "scripts": {
-    "dev": "tsx scripts/validate-content.ts && next dev",
-    "prebuild": "tsx scripts/validate-content.ts",
+    "dev": "tsx scripts/build-assets.ts && next dev",
+    "prebuild": "tsx scripts/build-assets.ts",
     "build": "next build",
     "start": "npx serve out",
+    "assets": "tsx scripts/build-assets.ts",
     "validate": "tsx scripts/validate-content.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -28,11 +29,15 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "^4.3.3",
+    "@types/archiver": "^8.0.0",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "archiver": "^8.0.0",
     "postcss": "^8.5.28",
+    "svgo": "^4.1.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"

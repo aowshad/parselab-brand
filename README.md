@@ -13,6 +13,22 @@ pnpm build && npx serve out
 
 Set `BASE_PATH=/sub-path` when building for a host that serves the site from a sub-path (e.g. GitHub Pages project sites).
 
+## Asset pipeline
+
+`pnpm assets` ([`scripts/build-assets.ts`](scripts/build-assets.ts)) runs automatically before `pnpm dev` and `pnpm build`. For each published brand it writes to `public/brands/<slug>/` (git-ignored):
+
+| Output | Path |
+| --- | --- |
+| Optimized SVG (svgo) | `logos/svg/<slug>-<id>.svg` |
+| Transparent PNG, 512/1024/2048/4096 px wide | `logos/png/<slug>-<id>@<width>.png` |
+| Palette | `colors.css`, `colors.json` |
+| Brand kit (`svg/`, `png/<width>/`, colors) | `<slug>-brand-kit.zip` |
+| One zip per logo group | `<slug>-<groupKey>-logos.zip` |
+
+It also writes `.generated/manifest.json` (paths and sizes for the UI). Sources whose hash hasn't changed are skipped (`.cache/`); delete that folder to force a full re-render. Outputs for removed variants or unpublished brands are deleted. Zips are byte-identical between builds.
+
+Logos should use outlined paths: `<text>` renders with whatever system fonts the build machine has.
+
 ## Adding a brand
 
 1. Create `content/brands/<slug>/` with `brand.json` + `logos/*.svg`. The folder name must equal `slug`.
