@@ -11,13 +11,6 @@
     "validate": "tsx scripts/validate-content.ts",
     "typecheck": "tsc --noEmit"
   },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "12.8.1",
-      "onFail": "download"
-    }
-  },
   "packageManager": "pnpm@12.8.1",
   "type": "module",
   "dependencies": {

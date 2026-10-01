@@ -1,0 +1,88 @@
+"use client";
+
+import { Grid2x2 } from "lucide-react";
+import { withBase } from "@/lib/paths";
+import type { VariantView } from "@/lib/view";
+import { DownloadSplitButton } from "./DownloadSplitButton";
+
+/** Box the logo is scaled into. Wide lockups get more width, compact marks more air. */
+function logoBox(v: VariantView) {
+  const wide = v.assets.svg.width / v.assets.svg.height >= 2;
+  const [x, y] = wide ? [20, 28] : [24, 24];
+  return { left: `${x}%`, top: `${y}%`, width: `${100 - 2 * x}%`, height: `${100 - 2 * y}%` };
+}
+
+export function LogoStage({
+  brandName,
+  groupLabel,
+  variants,
+  active,
+  transparent,
+  onToggleTransparent,
+}: {
+  brandName: string;
+  groupLabel: string;
+  variants: VariantView[];
+  active: VariantView;
+  transparent: boolean;
+  onToggleTransparent: () => void;
+}) {
+  // The checkerboard follows the variant's tone, so dark-stage logos stay dark-on-dark.
+  const onDark = active.darkStage;
+  const chrome = onDark ? "bg-on-dark/10 text-on-dark hover:bg-on-dark/20 focus-visible:outline-on-dark" : "bg-ink/5 text-ink hover:bg-ink/10";
+
+  return (
+    <div className="relative h-[clamp(300px,42vw,460px)]">
+      <div
+        className={`absolute inset-0 overflow-hidden rounded-stage border transition-[border-color] duration-[400ms] ${
+          onDark ? "border-transparent" : "border-hairline"
+        }`}
+      >
+        <div
+          className="absolute inset-0 transition-[background-color] duration-[400ms] ease-out-soft"
+          style={{ backgroundColor: active.previewBg }}
+        />
+        <div
+          className={`absolute inset-0 checkerboard transition-opacity duration-300 ease-out-soft ${onDark ? "checkerboard-dark" : ""} ${
+            transparent ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        {/* All variants of the group stay mounted so switching is an instant crossfade. */}
+        {variants.map((v) => {
+          const isActive = v.id === active.id;
+          return (
+            <img
+              key={v.id}
+              src={withBase(v.assets.svg.path)}
+              alt={isActive ? `${brandName} ${groupLabel}, ${v.name}` : ""}
+              aria-hidden={!isActive}
+              width={v.assets.svg.width}
+              height={v.assets.svg.height}
+              decoding="async"
+              fetchPriority={isActive ? "high" : "low"}
+              draggable={false}
+              className={`absolute object-contain transition-opacity duration-300 ease-out-soft ${
+                isActive ? "opacity-100" : "opacity-0"
+              }`}
+              style={logoBox(v)}
+            />
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        aria-pressed={transparent}
+        onClick={onToggleTransparent}
+        className={`absolute right-4 top-4 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium backdrop-blur-sm transition-colors duration-150 ease-out-soft ${chrome}`}
+      >
+        <Grid2x2 aria-hidden className="size-3.5" />
+        Transparent
+      </button>
+
+      <div className="absolute bottom-4 right-4">
+        <DownloadSplitButton variant={active} onDark={onDark} />
+      </div>
+    </div>
+  );
+}

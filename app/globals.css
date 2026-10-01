@@ -18,6 +18,10 @@
   --color-track: #eeeff2;
   --color-success: #22c55e;
   --color-focus: #2b5cff;
+  --color-checker: #e6e7eb;
+  --color-checker-dark: #22252d;
+  --color-danger: #f87171; /* on ink */
+  --color-on-dark: #ffffff;
 
   --radius-card: 16px;
   --radius-button: 10px;
@@ -27,6 +31,24 @@
   --radius-stage: 20px;
 
   --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  --shadow-pill: 0 1px 2px rgb(11 13 18 / 0.08), 0 1px 1px rgb(11 13 18 / 0.04);
+  --shadow-menu: 0 12px 32px -8px rgb(11 13 18 / 0.22), 0 2px 6px rgb(11 13 18 / 0.08);
+  --shadow-toast: 0 10px 30px -6px rgb(11 13 18 / 0.35);
+
+  --animate-menu-in: menu-in 160ms var(--ease-out-soft);
+  --animate-toast-in: toast-in 250ms var(--ease-out-soft);
+  --animate-fade-in: fade-in 250ms var(--ease-out-soft);
+
+  @keyframes menu-in {
+    from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
 }
 
 /* next/font sets these on <html>, so they must resolve where used. */
@@ -64,6 +86,23 @@
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
   }
+}
+
+/* Transparency checkerboard for the logo stage. The dark tone keeps white logos visible. */
+@utility checkerboard {
+  background-color: var(--checker-base, var(--color-surface));
+  background-image: conic-gradient(
+    var(--checker-square, var(--color-checker)) 25%,
+    transparent 0 50%,
+    var(--checker-square, var(--color-checker)) 0 75%,
+    transparent 0
+  );
+  background-size: 20px 20px;
+}
+
+@utility checkerboard-dark {
+  --checker-base: var(--color-ink-soft);
+  --checker-square: var(--color-checker-dark);
 }
 
 @utility scrollbar-none {
