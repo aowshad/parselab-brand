@@ -5,5 +5,37 @@
   "status": "soon",
   "order": 4,
   "updatedAt": "2026-10-02",
-  "contact": "brand@parselab.com"
+  "contact": "brand@parselab.com",
+  "theme": {
+    "previewBg": "#FFFFFF",
+    "cardLogo": "full-light-bg"
+  },
+  "logoGroups": [
+    {
+      "key": "full",
+      "label": "Full logo",
+      "description": "Mark + wordmark. The default logo.",
+      "variants": [
+        { "id": "full-light-bg", "name": "On light", "file": "full-light-bg.svg", "previewBg": "#FFFFFF", "dot": "#FFFFFF", "usage": "Primary lockup for white and light surfaces. Use this one by default." },
+        { "id": "full-dark-bg", "name": "On dark", "file": "full-dark-bg.svg", "previewBg": "#1A1A2E", "dot": "#1A1A2E", "usage": "Lockup with a white wordmark for dark surfaces, dark UI and video." }
+      ]
+    },
+    {
+      "key": "mark",
+      "label": "Mark",
+      "description": "Symbol only, for tight spaces.",
+      "variants": [
+        { "id": "mark-light-bg", "name": "On light", "file": "mark-light-bg.svg", "previewBg": "#FFFFFF", "dot": "#FFFFFF", "usage": "Use when the wordmark appears nearby or space is too tight for the full logo." },
+        { "id": "mark-dark-bg", "name": "On dark", "file": "mark-dark-bg.svg", "previewBg": "#1A1A2E", "dot": "#1A1A2E", "usage": "White mark for dark surfaces." }
+      ]
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "description": "App icon and favicon tile.",
+      "variants": [
+        { "id": "icon-brand", "name": "Brand color", "file": "icon-brand.svg", "previewBg": "#F3F4F6", "dot": "#1A1A2E", "usage": "Shopify App Store listing, favicons and anywhere the brand needs a self-contained tile." }
+      ]
+    }
+  ]
 }
