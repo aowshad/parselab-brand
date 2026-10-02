@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const LOGOS_SUBTITLE = "Every file in SVG and transparent PNG.";
-const COLORS_SUBTITLE = "Click a swatch to copy its hex, or any row to copy that value.";
+const COLORS_SUBTITLE = "Click any color to copy its hex.";
 
 /** One brand's page. It loads only this brand: no other brand is read, listed or linked. */
 export default async function BrandPage({ params }: Props) {

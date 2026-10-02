@@ -1,4 +1,4 @@
-import { bestTextOn, describeColor, gradientCss, isDark, type TextRecommendation } from "./color";
+import { gradientCss, isDark } from "./color";
 import { getAllBrands, getBrand } from "./content";
 import { getBrandAssets, getManifest, type FileRef, type VariantAssets } from "./manifest";
 import type { Brand, BrandColor, LogoGroup, LogoVariant } from "./schema";
@@ -6,28 +6,12 @@ import type { Brand, BrandColor, LogoGroup, LogoVariant } from "./schema";
 export type VariantView = LogoVariant & { dot: string; assets: VariantAssets; darkStage: boolean };
 export type LogoGroupView = Omit<LogoGroup, "variants"> & { zip: FileRef; variants: VariantView[] };
 
-export type ColorRow = {
-  label: string;
-  value: string;
-  /** Screen-reader name for the row's copy button, e.g. "Copy RGB rgb(108, 169, 243)". */
-  action: string;
-  /** Toast reads "Copied <toastLabel>"; defaults to the value. */
-  toastLabel?: string;
-  /** Small swatch before the value, for gradient stops. */
-  dot?: string;
-};
+/** A palette card: a solid color with its hex, or a gradient with one hex per stop. */
+export type ColorView = { name: string; role: string } & (
+  | { kind: "solid"; hex: string }
+  | { kind: "gradient"; css: string; stops: string[] }
+);
 
-export type ColorView = {
-  name: string;
-  role: string;
-  /** CSS background for the swatch: a hex or a gradient. No text is ever drawn on it. */
-  swatch: string;
-  /** What clicking the swatch copies. */
-  copy: { value: string; action: string; chip: "Copy hex" | "Copy CSS"; toastLabel: string };
-  rows: ColorRow[];
-  /** Recommended text color on this color, computed from its hex (worst case across gradient stops). */
-  text: TextRecommendation & { sample: string; worstCase: boolean };
-};
 export type PaletteView = { name: string; colors: ColorView[] };
 
 export type BrandView = Omit<Brand, "logoGroups" | "palettes"> & {
@@ -44,38 +28,9 @@ export type BrandView = Omit<Brand, "logoGroups" | "palettes"> & {
 function colorView(c: BrandColor): ColorView {
   if ("gradient" in c) {
     const { angle, stops } = c.gradient;
-    const css = gradientCss(angle, stops);
-    return {
-      name: c.name,
-      role: c.role,
-      swatch: css,
-      copy: { value: css, action: `Copy CSS for ${c.name}`, chip: "Copy CSS", toastLabel: `CSS for ${c.name}` },
-      rows: [
-        ...stops.map((s) => {
-          const hex = s.hex.toUpperCase();
-          return { label: `${s.at}%`, value: hex, dot: hex, action: `Copy ${s.at}% stop ${hex}` };
-        }),
-        { label: "CSS", value: css, action: `Copy CSS for ${c.name}`, toastLabel: `CSS for ${c.name}` },
-      ],
-      text: { ...bestTextOn(stops.map((s) => s.hex)), sample: css, worstCase: true },
-    };
+    return { name: c.name, role: c.role, kind: "gradient", css: gradientCss(angle, stops), stops: stops.map((s) => s.hex.toUpperCase()) };
   }
-  const d = describeColor(c.hex);
-  const rows: ColorRow[] = [
-    { label: "HEX", value: d.hex, action: `Copy hex ${d.hex}` },
-    { label: "RGB", value: d.rgb, action: `Copy RGB ${d.rgb}` },
-    { label: "HSL", value: d.hsl, action: `Copy HSL ${d.hsl}` },
-  ];
-  if (c.cmyk) rows.push({ label: "CMYK", value: c.cmyk, action: `Copy CMYK ${c.cmyk}` });
-  if (c.pantone) rows.push({ label: "Pantone", value: c.pantone, action: `Copy Pantone ${c.pantone}` });
-  return {
-    name: c.name,
-    role: c.role,
-    swatch: d.hex,
-    copy: { value: d.hex, action: `Copy hex ${d.hex}`, chip: "Copy hex", toastLabel: d.hex },
-    rows,
-    text: { ...bestTextOn([d.hex]), sample: d.hex, worstCase: false },
-  };
+  return { name: c.name, role: c.role, kind: "solid", hex: c.hex.toUpperCase() };
 }
 
 const countColors = (brand: Brand) => brand.palettes.reduce((n, p) => n + p.colors.length, 0);

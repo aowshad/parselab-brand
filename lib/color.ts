@@ -1,6 +1,6 @@
 /**
- * Color math shared by the palette UI, the asset pipeline and (later) the admin preview.
- * RGB, HSL and text recommendations are always derived from hex, never stored.
+ * Color math shared by the UI and the asset pipeline. RGB and HSL (written to colors.json)
+ * are always derived from hex, never stored.
  */
 
 export type Rgb = [r: number, g: number, b: number];
@@ -40,29 +40,6 @@ export function luminance([r, g, b]: Rgb): number {
 export function contrast(a: string, b: string): number {
   const [hi, lo] = [luminance(hexToRgb(a)), luminance(hexToRgb(b))].sort((x, y) => y - x) as [number, number];
   return (hi + 0.05) / (lo + 0.05);
-}
-
-export type TextRecommendation = {
-  color: "#FFFFFF" | "#0A0A0A";
-  label: "White" | "Black";
-  /** Worst-case ratio across every background, rounded down to 1 decimal so it never overstates. */
-  ratio: number;
-  rating: "AAA" | "AA" | "AA Large" | "Fail";
-};
-
-const TEXT = [
-  { color: "#FFFFFF", label: "White" },
-  { color: "#0A0A0A", label: "Black" },
-] as const;
-
-/** White or near-black text for one or more backgrounds (e.g. gradient stops): whichever has the best worst case. */
-export function bestTextOn(bgs: string[]): TextRecommendation {
-  const [best] = TEXT.map((t) => ({ ...t, worst: Math.min(...bgs.map((bg) => contrast(bg, t.color))) })).sort(
-    (a, b) => b.worst - a.worst,
-  ) as [{ color: "#FFFFFF" | "#0A0A0A"; label: "White" | "Black"; worst: number }];
-  const ratio = Math.floor(best.worst * 10) / 10;
-  const rating = best.worst >= 7 ? "AAA" : best.worst >= 4.5 ? "AA" : best.worst >= 3 ? "AA Large" : "Fail";
-  return { color: best.color, label: best.label, ratio, rating };
 }
 
 /** Whether white text reads better than black on `bg`: used to style UI drawn over a stage or dot. */
