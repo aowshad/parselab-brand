@@ -26,6 +26,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          # Its pnpm cache would run before corepack provides pnpm (next step).
+          package-manager-cache: false
 
       # pnpm version comes from "packageManager" in package.json.
       - run: corepack enable
