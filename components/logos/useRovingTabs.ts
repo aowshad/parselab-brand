@@ -17,7 +17,9 @@ export function useRovingTabs<T extends string>(items: readonly T[], active: T, 
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    const i = items.indexOf(active);
+    // Move from the focused tab (usually the selected one, but not after a mouse click elsewhere).
+    const focused = [...refs.current].find(([, el]) => el === e.currentTarget)?.[0];
+    const i = items.indexOf(focused ?? active);
     const last = items.length - 1;
     const next =
       e.key === "ArrowRight" ? (i === last ? 0 : i + 1)

@@ -1,0 +1,52 @@
+{
+  "slug": "optionia",
+  "name": "Optionia",
+  "description": "Product options, perfected.",
+  "status": "live",
+  "order": 1,
+  "updatedAt": "2026-10-02",
+  "contact": "brand@parselab.com",
+  "theme": {
+    "previewBg": "radial-gradient(120% 100% at 50% 0%, #F6F0FF 0%, #FFFFFF 75%)",
+    "cardLogo": "full-light-bg"
+  },
+  "logoGroups": [
+    {
+      "key": "full",
+      "label": "Full logo",
+      "description": "App icon + wordmark. The default logo.",
+      "variants": [
+        { "id": "full-light-bg", "name": "On light", "file": "full-light-bg.svg", "previewBg": "#FFFFFF", "dot": "#FFFFFF", "usage": "Primary lockup for white and light surfaces. Use this one by default." },
+        { "id": "full-dark-bg", "name": "On dark", "file": "full-dark-bg.svg", "previewBg": "#0B0D12", "dot": "#0B0D12", "usage": "Lockup with a white wordmark for dark surfaces, dark UI and video." }
+      ]
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "description": "App icon and favicon tile.",
+      "variants": [
+        { "id": "icon-brand", "name": "Brand color", "file": "icon-brand.svg", "previewBg": "#F3F4F6", "dot": "#8838E0", "usage": "Shopify App Store listing, favicons and anywhere the brand needs a self-contained tile." }
+      ]
+    },
+    {
+      "key": "square",
+      "label": "Square",
+      "description": "Social avatars and square slots.",
+      "variants": [
+        { "id": "square-brand", "name": "Brand color", "file": "square-brand.svg", "previewBg": "#F3F4F6", "dot": "#8838E0", "usage": "Profile pictures on platforms that apply their own corner rounding." }
+      ]
+    }
+  ],
+  "palettes": [
+    {
+      "name": "Main Palette",
+      "colors": [
+        { "name": "Violet", "role": "Brand gradient", "gradient": { "angle": 135, "stops": [{ "hex": "#F197FE", "at": 0 }, { "hex": "#8838E0", "at": 60 }, { "hex": "#5F12D4", "at": 100 }] } },
+        { "name": "Indigo", "role": "Ink", "hex": "#07004F" },
+        { "name": "Violet", "role": "Accent", "hex": "#8838E0" },
+        { "name": "Lavender", "role": "Background", "hex": "#F6F0FF" },
+        { "name": "White", "role": "Background", "hex": "#FFFFFF" }
+      ]
+    }
+  ]
+}

@@ -13,9 +13,9 @@ export function ColorCard({ color }: { color: ColorView }) {
     <li className="overflow-hidden rounded-card border border-hairline bg-surface">
       <button
         type="button"
-        onClick={() => copy(color.hex)}
-        aria-label={`Copy ${color.name} hex ${color.hex}`}
-        style={{ backgroundColor: color.hex }}
+        onClick={() => copy(color.copy.value, color.copy.label)}
+        aria-label={`Copy ${color.name} ${color.copy.label === color.copy.value ? `hex ${color.copy.value}` : color.copy.label}`}
+        style={{ background: color.swatch }}
         className={`group flex h-[168px] w-full flex-col justify-between p-4 text-left focus-visible:outline-current focus-visible:outline-offset-[-4px] ${
           color.darkSwatch ? "text-on-dark" : "text-ink"
         } ${color.faint ? "border-b border-hairline" : ""}`}
@@ -32,8 +32,9 @@ export function ColorCard({ color }: { color: ColorView }) {
           <li key={label}>
             <button
               type="button"
-              onClick={() => copy(value)}
-              aria-label={`Copy ${color.name} ${label} ${value}`}
+              // The CSS row's value is long, so the toast names it instead of repeating it.
+              onClick={() => copy(value, label === "CSS" ? `${color.name} gradient CSS` : value)}
+              aria-label={label === "CSS" ? `Copy ${color.name} gradient CSS` : `Copy ${color.name} ${label} ${value}`}
               className="group relative flex h-9 w-full items-center gap-3 rounded-[8px] px-2.5 text-left transition-colors duration-150 ease-out-soft hover:bg-hover focus-visible:outline-offset-0"
             >
               <span className={`${labelWidth} shrink-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted`}>{label}</span>

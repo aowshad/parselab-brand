@@ -16,7 +16,7 @@ const GeistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: { default: "ParseLab Brand", template: "%s · ParseLab Brand" },
+  title: { default: "Brand assets", template: "%s — Brand assets" },
   description: "Logos, colors and guidelines for ParseLab LLC brands.",
 };
 

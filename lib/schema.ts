@@ -9,13 +9,13 @@ const hex = z
   .regex(/^#[0-9a-fA-F]{6}$/, "must be a 6-digit hex color like #2B5CFF")
   .transform((v) => v.toUpperCase());
 
-export const sectionStatusSchema = z.enum(["planned", "published"]);
-
 export const logoVariantSchema = z.object({
   id: slug,
   name: z.string().min(1),
   file: z.string().regex(/^[\w.-]+\.svg$/, "must be an .svg filename inside logos/"),
   previewBg: hex,
+  /** Dot shown before the variant's label. Defaults to previewBg. */
+  dot: hex.optional(),
   usage: z.string().min(1),
 });
 
@@ -26,13 +26,26 @@ export const logoGroupSchema = z.object({
   variants: z.array(logoVariantSchema).min(1, "a logo group needs at least one variant"),
 });
 
-export const colorSchema = z.object({
+export const solidColorSchema = z.object({
   name: z.string().min(1),
   role: z.string().min(1),
   hex,
   cmyk: z.string().min(1).optional(),
   pantone: z.string().min(1).optional(),
 });
+
+export const gradientColorSchema = z.object({
+  name: z.string().min(1),
+  role: z.string().min(1),
+  gradient: z.object({
+    angle: z.number().min(0).max(360),
+    stops: z
+      .array(z.object({ hex, at: z.number().min(0).max(100) }))
+      .min(2, "a gradient needs at least two stops"),
+  }),
+});
+
+export const colorSchema = z.union([solidColorSchema, gradientColorSchema]);
 
 export const paletteSchema = z.object({
   name: z.string().min(1),
@@ -44,24 +57,32 @@ export const brandSchema = z
     slug,
     name: z.string().min(1),
     description: z.string().min(1),
-    status: z.enum(["published", "draft"]),
-    /** Sidebar position; lower comes first. Ties sort by name. */
+    /** `soon` brands get a page and a home card with coming-soon states. */
+    status: z.enum(["live", "soon"]),
+    /** Position on the home page; lower comes first. Ties sort by name. */
     order: z.number().int().default(100),
+    /** Home card preview. Without it the card shows the brand's initial on a neutral tile. */
+    theme: z
+      .object({
+        /** Any CSS background, e.g. a color or a radial-gradient wash. */
+        previewBg: z.string().min(1),
+        /** Variant id shown on the card, usually the full logo. */
+        cardLogo: slug,
+      })
+      .optional(),
     updatedAt: z.iso.date("must be an ISO date (YYYY-MM-DD)"),
     contact: z.email(),
     logoGroups: z.array(logoGroupSchema).default([]),
     palettes: z.array(paletteSchema).default([]),
-    sections: z
-      .object({
-        typography: sectionStatusSchema.default("planned"),
-        guidelines: sectionStatusSchema.default("planned"),
-        screenshots: sectionStatusSchema.default("planned"),
-      })
-      .default({ typography: "planned", guidelines: "planned", screenshots: "planned" }),
   })
   .superRefine((brand, ctx) => {
-    if (brand.status === "published" && brand.logoGroups.length === 0) {
-      ctx.addIssue({ code: "custom", path: ["logoGroups"], message: "a published brand needs at least one logo group" });
+    if (brand.status === "live" && brand.logoGroups.length === 0) {
+      ctx.addIssue({ code: "custom", path: ["logoGroups"], message: 'a "live" brand needs at least one logo group' });
+    }
+
+    const ids = brand.logoGroups.flatMap((g) => g.variants.map((v) => v.id));
+    if (brand.theme && !ids.includes(brand.theme.cardLogo)) {
+      ctx.addIssue({ code: "custom", path: ["theme", "cardLogo"], message: `no variant with id "${brand.theme.cardLogo}"` });
     }
 
     const groupKeys = new Set<string>();
@@ -88,9 +109,9 @@ export const brandSchema = z
     );
   });
 
-export type SectionStatus = z.infer<typeof sectionStatusSchema>;
 export type LogoVariant = z.infer<typeof logoVariantSchema>;
 export type LogoGroup = z.infer<typeof logoGroupSchema>;
 export type BrandColor = z.infer<typeof colorSchema>;
+export type GradientColor = z.infer<typeof gradientColorSchema>;
 export type Palette = z.infer<typeof paletteSchema>;
 export type Brand = z.infer<typeof brandSchema>;

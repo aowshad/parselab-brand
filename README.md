@@ -1,6 +1,9 @@
-# ParseLab Brand
+# ParseLab Brand Assets
 
-Brand assets & guidelines platform for ParseLab LLC brands. Next.js (App Router) static export, Tailwind CSS v4, content in the repo.
+Brand assets portal for ParseLab LLC products. Next.js (App Router) static export, Tailwind CSS v4, content in the repo.
+
+- `/`: a card for every brand, plus "Download all" (every brand kit in one zip).
+- `/<slug>`: one page per brand, rendered from that brand's `brand.json` only. Sections: Logos, Colors, Typography, Usage guidelines.
 
 ## Run locally
 
@@ -18,12 +21,12 @@ Set `BASE_PATH=/sub-path` when building for a host that serves the site from a s
 ## Sharing and shortcuts
 
 - **Deep links:** `/<brand>?logo=<groupKey>&variant=<variantId>` opens that logo, e.g. `/parselab?logo=icon&variant=icon-white`. Either parameter works alone. The URL updates as you switch tabs, so "Copy link" shares the current logo.
-- **Section anchors:** `#logos`, `#colors`, `#typography`, `#guidelines`.
+- **Section anchors:** `#logos`, `#colors`, `#typography`, `#usage`.
 - **Keyboard:** arrow keys, Home and End move between tabs and through the download menu, and Esc closes the menu. While focus is in the logo section, `T` toggles the transparency preview and `D` downloads the current SVG.
 
 ## Asset pipeline
 
-`pnpm assets` ([`scripts/build-assets.ts`](scripts/build-assets.ts)) runs automatically before `pnpm dev` and `pnpm build`. For each published brand it writes to `public/brands/<slug>/` (git-ignored):
+`pnpm assets` ([`scripts/build-assets.ts`](scripts/build-assets.ts)) runs automatically before `pnpm dev` and `pnpm build`. For each brand it writes to `public/brands/<slug>/` (git-ignored):
 
 | Output | Path |
 | --- | --- |
@@ -33,32 +36,35 @@ Set `BASE_PATH=/sub-path` when building for a host that serves the site from a s
 | Brand kit (`svg/`, `png/<width>/`, colors) | `<slug>-brand-kit.zip` |
 | One zip per logo group | `<slug>-<groupKey>-logos.zip` |
 
-It also writes `.generated/manifest.json` (paths and sizes for the UI). Sources whose hash hasn't changed are skipped (`.cache/`); delete that folder to force a full re-render. Outputs for removed variants or unpublished brands are deleted. Zips are byte-identical between builds.
+Brands without logos get no kit, and their "Download kit" buttons are hidden. Every kit is also combined into `public/brands/parselab-brand-kits.zip` for "Download all" on the home page; that button is hidden when no brand has a kit.
+
+It also writes `.generated/manifest.json` (paths and sizes for the UI). Sources whose hash hasn't changed are skipped (`.cache/`); delete that folder to force a full re-render. Outputs for removed variants or brands are deleted. Zips are byte-identical between builds.
 
 Logos should use outlined paths: `<text>` renders with whatever system fonts the build machine has.
 
 ## Adding a brand
 
-1. Create `content/brands/<slug>/` with `brand.json` + `logos/*.svg`. The folder name must equal `slug`.
-2. Set `"status": "published"` (`"draft"` brands appear in the sidebar as "Soon" and get no page).
-3. Run `pnpm build`. The page, PNGs, zip and sidebar entry are generated.
+1. Create `content/brands/<slug>/` with `brand.json` and, once you have them, `logos/*.svg`. The folder name must equal `slug`.
+2. Set `"status"`: `"live"` (needs at least one logo group) or `"soon"` (shows "Soon" on its home card; empty sections show "Coming soon").
+3. Run `pnpm build`. The home card, brand page, PNGs and zips are generated. No code changes.
 
 `pnpm validate` checks all content without building. Invalid content fails `pnpm dev` and `pnpm build` with every problem listed by brand, variant and path.
 
 ### `brand.json`
 
-The schema lives in [`lib/schema.ts`](lib/schema.ts). Copy [`content/brands/parselab/brand.json`](content/brands/parselab/brand.json) as a starting point.
+The schema lives in [`lib/schema.ts`](lib/schema.ts). Copy [`content/brands/parselab/brand.json`](content/brands/parselab/brand.json) as a starting point; [`optionia`](content/brands/optionia/brand.json) shows a gradient color and [`inkybay`](content/brands/inkybay/brand.json) the minimum for a `soon` brand.
 
 | Field | Notes |
 | --- | --- |
 | `slug` | Lowercase kebab-case, equals the folder name. Used in URLs and filenames. |
-| `status` | `published` or `draft`. |
-| `order` | Optional sidebar position, lower first (default 100, ties by name). |
+| `name`, `description` | Shown in the hero and on the home card. |
+| `status` | `live` or `soon`. |
+| `order` | Optional position on the home page, lower first (default 100, ties by name). |
 | `updatedAt` | `YYYY-MM-DD`. |
 | `contact` | Email shown in the footer. |
-| `logoGroups[]` | Any number of groups (`key`, `label`, `description`), each with any number of `variants`. A brand with an extra approved lockup ("Horizontal", "Stacked") just adds a group. |
-| `variants[]` | `id` (unique within the brand, names the output files), `name`, `file` (inside `logos/`), `previewBg` (stage background), `usage`. |
-| `palettes[]` | `name` + `colors[]` of `name`, `role`, `hex`, optional `cmyk` and `pantone`. RGB and HSL are computed. |
-| `sections` | `typography`, `guidelines`, `screenshots`: `planned` or `published`. |
+| `theme` | Optional home card preview: `previewBg` (any CSS background, e.g. a radial-gradient wash) and `cardLogo` (a variant id). Without it the card shows the brand's initial. |
+| `logoGroups[]` | Any number of groups (`key`, `label`, `description`), each with any number of `variants`. Only list types and variants that really exist. |
+| `variants[]` | `id` (unique within the brand, names the output files), `name` (switcher label, keep it short: "On dark"), `file` (inside `logos/`), `previewBg` (canvas background), optional `dot` (swatch before the label, defaults to `previewBg`), `usage` (one-line hint). |
+| `palettes[]` | `name` + `colors[]`. A color is `name`, `role`, `hex` (optional `cmyk`, `pantone`; RGB and HSL are computed) or `name`, `role`, `gradient: { angle, stops: [{ hex, at }] }`. |
 
-The hero icon uses the variant with id `icon-brand` (falls back to the first variant). Replacing a logo means dropping in a new SVG with the same filename.
+The hero and navbar icon is the variant with id `icon-brand` (falls back to the first variant on a white tile, then to the brand's initial). Replacing a logo means dropping in a new SVG with the same filename. Typography and Usage guidelines show "Coming soon" until they get a content model.

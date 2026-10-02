@@ -1,11 +1,9 @@
 {
   "slug": "inkybay",
   "name": "InkyBay",
-  "description": "Product personalizer for Shopify print-on-demand stores.",
-  "status": "draft",
-  "order": 1,
+  "description": "Brand assets coming soon.",
+  "status": "soon",
+  "order": 2,
   "updatedAt": "2026-10-01",
-  "contact": "brand@parselab.com",
-  "logoGroups": [],
-  "palettes": []
+  "contact": "brand@parselab.com"
 }

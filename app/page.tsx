@@ -1,23 +1,29 @@
-import Link from "next/link";
-import { getPublishedBrands } from "@/lib/content";
+import { BrandCard } from "@/components/home/BrandCard";
+import { Footer } from "@/components/shell/Footer";
+import { HomeTopBar } from "@/components/shell/TopBar";
+import { SITE } from "@/lib/site";
+import { getAllKits, getBrandCards } from "@/lib/view";
 
-// Static hosts can't send a 30x, so redirect with a meta refresh (React hoists it into <head>).
 export default function Home() {
-  // getAllBrands guarantees at least one published brand.
-  const first = getPublishedBrands()[0]!;
-  const href = `${process.env.NEXT_PUBLIC_BASE_PATH}/${first.slug}`;
-
   return (
-    <main className="grid min-h-dvh place-items-center px-4 text-sm text-muted">
-      <meta httpEquiv="refresh" content={`0; url=${href}`} />
-      <link rel="canonical" href={href} />
-      <p>
-        Redirecting to{" "}
-        <Link href={`/${first.slug}`} className="font-medium text-ink underline underline-offset-4">
-          {first.name} brand assets
-        </Link>
-        …
-      </p>
-    </main>
+    <>
+      <HomeTopBar all={getAllKits()} />
+      <main className="mx-auto max-w-[1120px] px-4 sm:px-8">
+        <header className="pt-12 sm:pt-16">
+          <p className="text-[13px] font-medium text-muted">Brand assets</p>
+          <h1 className="mt-2 max-w-2xl text-3xl font-semibold tracking-[-0.025em] sm:text-4xl">
+            Logos, colors and guidelines for every ParseLab product.
+          </h1>
+        </header>
+        <ul className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {getBrandCards().map((b) => (
+            <li key={b.slug} className="flex">
+              <BrandCard brand={b} />
+            </li>
+          ))}
+        </ul>
+        <Footer contact={SITE.contact} />
+      </main>
+    </>
   );
 }

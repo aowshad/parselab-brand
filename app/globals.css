@@ -27,7 +27,7 @@
   --radius-button: 10px;
   --radius-button-sm: 9px;
   --radius-segment: 12px;
-  --radius-segment-item: 9px;
+  --radius-segment-item: 8px;
   --radius-stage: 20px;
 
   --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -70,6 +70,10 @@
 @layer base {
   html {
     scroll-padding-top: calc(var(--topbar-height) + 24px);
+    /* Below 900px the TOC chip row (49px) is also sticky under the navbar. */
+    @media (width < 900px) {
+      scroll-padding-top: calc(var(--topbar-height) + 49px + 16px);
+    }
     -webkit-text-size-adjust: 100%;
   }
 

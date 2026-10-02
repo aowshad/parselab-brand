@@ -82,7 +82,7 @@ function loadBrandFolder(folder: string, problems: string[]): Brand | null {
 const useCache = process.env.NODE_ENV === "production";
 let cache: Brand[] | null = null;
 
-/** Every brand (published and draft), validated. Throws ContentError listing all problems. */
+/** Every brand (live and soon), validated and in home-page order. Throws ContentError listing all problems. */
 export function getAllBrands(): Brand[] {
   if (useCache && cache) return cache;
 
@@ -97,24 +97,13 @@ export function getAllBrands(): Brand[] {
   const brands = folders.map((f) => loadBrandFolder(f, problems)).filter((b): b is Brand => b !== null);
 
   if (problems.length) throw new ContentError(problems);
-  if (!brands.some((b) => b.status === "published")) {
-    throw new ContentError([`${rel(CONTENT_DIR)}\n  • no brand has "status": "published"`]);
-  }
+  if (!brands.length) throw new ContentError([`${rel(CONTENT_DIR)}\n  • no brands found`]);
 
   cache = brands.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
   return cache;
 }
 
-export function getPublishedBrands(): Brand[] {
-  return getAllBrands().filter((b) => b.status === "published");
-}
-
+/** One brand by slug. Brand pages use only this, so a page never sees other brands. */
 export function getBrand(slug: string): Brand | undefined {
-  return getPublishedBrands().find((b) => b.slug === slug);
+  return getAllBrands().find((b) => b.slug === slug);
 }
-
-/** Minimal data the sidebar needs for every brand, including drafts. */
-export function getBrandNav() {
-  return getAllBrands().map(({ slug, name, status }) => ({ slug, name, status }));
-}
-export type BrandNavItem = ReturnType<typeof getBrandNav>[number];

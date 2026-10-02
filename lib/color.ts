@@ -48,3 +48,10 @@ export function describeColor(hex: string) {
   const rgb = hexToRgb(hex);
   return { hex: hex.toUpperCase(), rgb: formatRgb(rgb), hsl: formatHsl(rgbToHsl(rgb)) };
 }
+
+export type GradientStop = { hex: string; at: number };
+
+/** `linear-gradient(135deg, #F197FE 0%, …)`, the value shown, copied and written to colors.css. */
+export function gradientCss(angle: number, stops: GradientStop[]): string {
+  return `linear-gradient(${angle}deg, ${stops.map((s) => `${s.hex.toUpperCase()} ${s.at}%`).join(", ")})`;
+}

@@ -91,10 +91,11 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
     }
   };
 
+  // `onDark` only applies from `sm` up: on phones the button sits under the stage, on the page.
   const tone = onDark
-    ? "bg-surface text-ink hover:bg-hover focus-visible:outline-on-dark"
+    ? "bg-ink text-on-dark hover:bg-ink-soft sm:bg-surface sm:text-ink sm:hover:bg-hover sm:focus-visible:outline-on-dark"
     : "bg-ink text-on-dark hover:bg-ink-soft";
-  const divider = onDark ? "border-ink/10" : "border-on-dark/15";
+  const divider = onDark ? "border-on-dark/15 sm:border-ink/10" : "border-on-dark/15";
 
   return (
     <div ref={rootRef} className="relative">

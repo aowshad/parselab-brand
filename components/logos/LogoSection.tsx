@@ -79,6 +79,7 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
       onKeyDown={onKeyDown}
       className="mt-16 sm:mt-20"
     >
+      {/* Same header layout as components/sections/Section, plus the ref and shortcut handler this section needs. */}
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div>
           <h2 id="logos-heading" className="text-2xl font-semibold tracking-[-0.02em]">
@@ -138,9 +139,9 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
           items={allVariants}
           getKey={(v) => v.id}
           isActive={(v) => v.id === variant.id}
-          className="mt-4"
+          className="mt-3"
           render={(v) => (
-            <p className="flex gap-2 text-sm text-muted">
+            <p className="flex gap-2 text-[13px] text-muted">
               <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
               <span>
                 <span className="sr-only">Usage: </span>
