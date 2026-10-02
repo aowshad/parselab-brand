@@ -1,7 +1,9 @@
 import { gradientCss, isDark } from "./color";
 import { getAllBrands, getBrand } from "./content";
+import { BRAND_FONTS } from "./fonts";
 import { getBrandAssets, getManifest, type FileRef, type VariantAssets } from "./manifest";
-import type { Brand, BrandColor, LogoGroup, LogoVariant } from "./schema";
+import type { Brand, BrandColor, LogoGroup, LogoVariant, Typeface } from "./schema";
+import { typeScale, type ScaleStep } from "./typography";
 import { cardVariant, type Theme } from "./variants";
 
 export type VariantView = LogoVariant & { dot: string; assets: VariantAssets; darkStage: boolean };
@@ -15,7 +17,13 @@ export type ColorView = { name: string; role: string } & (
 
 export type PaletteView = { name: string; colors: ColorView[] };
 
-export type BrandView = Omit<Brand, "logoGroups" | "palettes"> & {
+/** A typeface with the CSS font-family that renders it (self-hosted, see lib/fonts.ts). */
+export type TypefaceView = Typeface & { fontFamily: string };
+export type TypographyView = { typefaces: TypefaceView[]; scale: (Omit<ScaleStep, "use"> & { face: TypefaceView })[] };
+
+export type BrandView = Omit<Brand, "logoGroups" | "palettes" | "typography"> & {
+  /** Null until the brand names its typefaces: the section shows "Coming soon". */
+  typography: TypographyView | null;
   logoGroups: LogoGroupView[];
   palettes: PaletteView[];
   /** Null until the brand has logos: hide every "Download kit" button. */
@@ -30,6 +38,18 @@ export type BrandView = Omit<Brand, "logoGroups" | "palettes"> & {
   icon: { src: string; isTile: boolean; plate: string } | null;
   counts: { variants: number; colors: number };
 };
+
+function typographyView(brand: Brand): TypographyView | null {
+  const faces = brand.typography?.typefaces;
+  if (!faces) return null;
+  const typefaces = faces.map((f) => {
+    const fontFamily = BRAND_FONTS[f.family];
+    if (!fontFamily) throw new Error(`${brand.slug}: typeface "${f.family}" isn't registered in lib/fonts.ts.`);
+    return { ...f, fontFamily };
+  });
+  const byFamily = (f: Typeface) => typefaces.find((t) => t.family === f.family)!;
+  return { typefaces, scale: typeScale(brand.name, faces).map(({ use: _use, ...s }) => ({ ...s, face: byFamily(s.face) })) };
+}
 
 function colorView(c: BrandColor): ColorView {
   if ("gradient" in c) {
@@ -70,6 +90,7 @@ export function getBrandView(slug: string): BrandView | undefined {
     ...brand,
     logoGroups,
     palettes: brand.palettes.map((p) => ({ name: p.name, colors: p.colors.map(colorView) })),
+    typography: typographyView(brand),
     kit: assets.kit,
     colorFiles: assets.colors,
     og: assets.og,

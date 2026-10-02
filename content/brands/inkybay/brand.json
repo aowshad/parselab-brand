@@ -25,5 +25,22 @@
         { "id": "icon-brand", "name": "Brand color", "file": "icon-brand.svg", "previewBg": "#F3F4F6", "dot": "#D42427", "usage": "Shopify App Store listing, favicons and anywhere the brand needs a self-contained tile." }
       ]
     }
-  ]
+  ],
+  "palettes": [
+    {
+      "name": "Main palette",
+      "colors": [
+        { "name": "Ink gradient", "role": "App icon", "gradient": { "angle": 45, "stops": [{ "hex": "#F58220", "at": 0 }, { "hex": "#D42427", "at": 58 }] } },
+        { "name": "Red", "role": "Primary", "hex": "#D42427" },
+        { "name": "Orange", "role": "Accent", "hex": "#F58220" },
+        { "name": "Charcoal", "role": "Wordmark & text", "hex": "#353535" },
+        { "name": "White", "role": "Backgrounds", "hex": "#FFFFFF" }
+      ]
+    }
+  ],
+  "typography": {
+    "typefaces": [
+      { "family": "Poppins", "role": "Headings & body", "use": "both", "weights": [400, 500, 600, 700], "url": "https://fonts.google.com/specimen/Poppins" }
+    ]
+  }
 }

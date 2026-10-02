@@ -70,10 +70,11 @@ The schema lives in [`lib/schema.ts`](lib/schema.ts). Copy [`content/brands/pars
 | `logoGroups[]` | Any number of groups (`key`, `label`, `description`), each with any number of `variants`. Only list types and variants that really exist. |
 | `variants[]` | `id` (unique within the brand, names the output files; the suffix says what it's for, see below), `name` (switcher label, keep it short: "On dark"), `file` (inside `logos/`), `previewBg` (canvas background), optional `dot` (swatch before the label, defaults to `previewBg`), `usage` (one-line hint). |
 | `palettes[]` | `name` + `colors[]`. A color is `name`, `role`, `hex` (optional `cmyk`, `pantone`; RGB and HSL are computed) or `name`, `role`, `gradient: { angle, stops: [{ hex, at }] }`. |
+| `typography` | Optional `typefaces[]`: `family` (must be registered in [`lib/fonts.ts`](lib/fonts.ts), which self-hosts it), `role` (card label, e.g. "Body & UI"), `use` (`headings`, `body` or `both`), `weights`, `url` (where to get it). The type scale is the same for every brand ([`lib/typography.ts`](lib/typography.ts)), set in these faces at their nearest weight. |
 
 Variant ids end in what they're made for: `-light-bg` (On light), `-dark-bg` (On dark), `-black`, `-white`; anything else (`icon-brand`, `square-dark`) is a self-contained tile. That drives the theme ([`lib/variants.ts`](lib/variants.ts)):
 
 - **Home cards** have one thumbnail background per theme. Light mode shows the Full logo's `-light-bg` variant (else `-black`), dark mode its `-dark-bg` (else `-white`). As a last resort the other theme's logo sits on a small plate of its own `previewBg`. No Full logo: the same order on the Icon group. No logos: the brand name.
 - **Logo preview** starts on On dark in dark mode and On light in light mode, until a variant is picked.
 
-The hero icon and favicon is the variant with id `icon-brand` (falls back to the first variant on its own `previewBg`, then to the brand's initial). Replacing a logo means dropping in a new SVG with the same filename. Typography and Usage guidelines show "Coming soon" until they get a content model.
+The hero icon and favicon is the variant with id `icon-brand` (falls back to the first variant on its own `previewBg`, then to the brand's initial). Replacing a logo means dropping in a new SVG with the same filename. Typography shows "Coming soon" for a brand without `typography`; Usage guidelines show it until they get a content model.

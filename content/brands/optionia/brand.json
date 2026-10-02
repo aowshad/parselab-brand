@@ -45,5 +45,10 @@
         { "name": "White", "role": "Background", "hex": "#FFFFFF" }
       ]
     }
-  ]
+  ],
+  "typography": {
+    "typefaces": [
+      { "family": "Plus Jakarta Sans", "role": "Headings & body", "use": "both", "weights": [400, 500, 600, 700], "url": "https://fonts.google.com/specimen/Plus+Jakarta+Sans" }
+    ]
+  }
 }

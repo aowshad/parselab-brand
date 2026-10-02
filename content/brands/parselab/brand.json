@@ -84,5 +84,10 @@
         }
       ]
     }
-  ]
+  ],
+  "typography": {
+    "typefaces": [
+      { "family": "Geist", "role": "Headings & body", "use": "both", "weights": [400, 500, 600, 700], "url": "https://vercel.com/font" }
+    ]
+  }
 }

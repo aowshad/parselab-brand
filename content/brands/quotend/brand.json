@@ -34,5 +34,20 @@
         { "id": "icon-brand", "name": "Brand color", "file": "icon-brand.svg", "previewBg": "#F3F4F6", "dot": "#1A1A2E", "usage": "Shopify App Store listing, favicons and anywhere the brand needs a self-contained tile." }
       ]
     }
-  ]
+  ],
+  "palettes": [
+    {
+      "name": "Main palette",
+      "colors": [
+        { "name": "Navy", "role": "Primary", "hex": "#1A1A2E" },
+        { "name": "Orange", "role": "Accent", "hex": "#FF7F2A" },
+        { "name": "White", "role": "Backgrounds", "hex": "#FFFFFF" }
+      ]
+    }
+  ],
+  "typography": {
+    "typefaces": [
+      { "family": "Outfit", "role": "Headings & body", "use": "both", "weights": [400, 500, 600, 700], "url": "https://fonts.google.com/specimen/Outfit" }
+    ]
+  }
 }

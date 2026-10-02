@@ -47,6 +47,22 @@ export const gradientColorSchema = z.object({
 
 export const colorSchema = z.union([solidColorSchema, gradientColorSchema]);
 
+export const typefaceSchema = z.object({
+  /** Font family name. It must be registered in lib/fonts.ts, which self-hosts it. */
+  family: z.string().min(1),
+  /** Shown on the card, e.g. "Headings" or "Body & UI". */
+  role: z.string().min(1),
+  /** Which steps of the type scale it sets. */
+  use: z.enum(["headings", "body", "both"]),
+  weights: z.array(z.number().int().min(100).max(900).multipleOf(100)).min(1),
+  /** Where to get the font files. */
+  url: z.url(),
+});
+
+export const typographySchema = z.object({
+  typefaces: z.array(typefaceSchema).min(1),
+});
+
 export const paletteSchema = z.object({
   name: z.string().min(1),
   colors: z.array(colorSchema).min(1),
@@ -70,6 +86,7 @@ export const brandSchema = z
     contact: z.email(),
     logoGroups: z.array(logoGroupSchema).default([]),
     palettes: z.array(paletteSchema).default([]),
+    typography: typographySchema.optional(),
   })
   .superRefine((brand, ctx) => {
     if (brand.status === "live" && brand.logoGroups.length === 0) {
@@ -79,6 +96,13 @@ export const brandSchema = z
     const ids = brand.logoGroups.flatMap((g) => g.variants.map((v) => v.id));
     if (brand.ogLogo && !ids.includes(brand.ogLogo)) {
       ctx.addIssue({ code: "custom", path: ["ogLogo"], message: `no variant with id "${brand.ogLogo}"` });
+    }
+
+    const faces = brand.typography?.typefaces ?? [];
+    for (const use of ["headings", "body"] as const) {
+      if (faces.length && !faces.some((f) => f.use === use || f.use === "both")) {
+        ctx.addIssue({ code: "custom", path: ["typography", "typefaces"], message: `no typeface sets ${use} (use "${use}" or "both")` });
+      }
     }
 
     const groupKeys = new Set<string>();
@@ -110,4 +134,5 @@ export type LogoGroup = z.infer<typeof logoGroupSchema>;
 export type BrandColor = z.infer<typeof colorSchema>;
 export type GradientColor = z.infer<typeof gradientColorSchema>;
 export type Palette = z.infer<typeof paletteSchema>;
+export type Typeface = z.infer<typeof typefaceSchema>;
 export type Brand = z.infer<typeof brandSchema>;

@@ -55,5 +55,22 @@
         { "id": "circle-dark", "name": "Dark", "file": "circle-dark.svg", "previewBg": "#F3F4F6", "dot": "#1A1A1A", "usage": "Dark circular avatar for light interfaces." }
       ]
     }
-  ]
+  ],
+  "palettes": [
+    {
+      "name": "Main palette",
+      "colors": [
+        { "name": "Gold", "role": "Primary", "hex": "#FFD700" },
+        { "name": "Onyx", "role": "Wordmark & dark surfaces", "hex": "#1A1A1A" },
+        { "name": "Cream", "role": "Wordmark on dark", "hex": "#FFFDF0" },
+        { "name": "White", "role": "Backgrounds", "hex": "#FFFFFF" }
+      ]
+    }
+  ],
+  "typography": {
+    "typefaces": [
+      { "family": "DM Serif Display", "role": "Headings", "use": "headings", "weights": [400], "url": "https://fonts.google.com/specimen/DM+Serif+Display" },
+      { "family": "Montserrat", "role": "Body & UI", "use": "body", "weights": [400, 500, 600], "url": "https://fonts.google.com/specimen/Montserrat" }
+    ]
+  }
 }

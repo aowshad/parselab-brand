@@ -8,6 +8,7 @@ import { ComingSoonCard, Section } from "@/components/sections/Section";
 import { Footer } from "@/components/shell/Footer";
 import { TocChips, TocSidebar, type TocItem } from "@/components/shell/Toc";
 import { BrandTopBar } from "@/components/shell/TopBar";
+import { TypographySection } from "@/components/typography/TypographySection";
 import { getAllBrands } from "@/lib/content";
 import { withBase } from "@/lib/paths";
 import { getBrandView } from "@/lib/view";
@@ -50,7 +51,7 @@ export default async function BrandPage({ params }: Props) {
   const toc: TocItem[] = [
     { id: "logos", label: "Logos", ...(variants ? { count: variants } : { soon: true }) },
     { id: "colors", label: "Colors", ...(colors ? { count: colors } : { soon: true }) },
-    { id: "typography", label: "Typography", soon: true },
+    { id: "typography", label: "Typography", ...(brand.typography ? { count: brand.typography.typefaces.length } : { soon: true }) },
     { id: "usage", label: "Usage guidelines", soon: true },
   ];
 
@@ -82,7 +83,11 @@ export default async function BrandPage({ params }: Props) {
             </Section>
 
             <Section id="typography" title="Typography" subtitle="Typefaces, weights and the type scale.">
-              <ComingSoonCard icon={Type} text="Typefaces and the type scale will be published here." />
+              {brand.typography ? (
+                <TypographySection typography={brand.typography} />
+              ) : (
+                <ComingSoonCard icon={Type} text="Typefaces and the type scale will be published here." />
+              )}
             </Section>
 
             <Section id="usage" title="Usage guidelines" subtitle="Clear space, minimum sizes, do's and don'ts.">
