@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             style={{ transition: `opacity ${EXIT_MS}ms var(--ease-out)` }}
-            className={`flex max-w-full animate-toast-in items-center gap-2 rounded-full bg-ink py-2 pl-3 pr-4 text-small text-on-dark shadow-toast ${
+            className={`flex max-w-full animate-toast-in items-center gap-2 rounded-full bg-btn py-2 pl-3 pr-4 text-small text-btn-ink shadow-toast ${
               toast.leaving ? "opacity-0" : "opacity-100"
             }`}
           >

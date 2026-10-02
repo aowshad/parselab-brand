@@ -6,6 +6,7 @@ import type { BrandView } from "@/lib/view";
 import { buttonClass } from "../ui/Button";
 import { DownloadLink } from "../ui/DownloadLink";
 import { StickyBar } from "./StickyBar";
+import { ThemeToggle } from "./ThemeToggle";
 
 const SITE_NAME = "ParseLab Brand";
 
@@ -18,26 +19,36 @@ function KitButton({ file, label, compact = false }: { file: FileRef; label: str
       // Icon-only on phones, so the status label must not reserve width there either.
       doneLabel={compact ? <span className="max-sm:hidden">Downloaded</span> : "Downloaded"}
       aria-label={`${label}, ${formatSize(file.sizeKb)}`}
-      className={buttonClass({ variant: "primary", size: "sm", className: "ml-auto" })}
+      className={buttonClass({ variant: "primary", size: "sm" })}
     >
       <Download aria-hidden className="size-4" />
       {/* `compact`: icon-only on phones. */}
       <span className={`tabular-nums ${compact ? "max-sm:hidden" : ""}`}>
         {label}
-        <span className="text-on-dark/60"> · {formatSize(file.sizeKb)}</span>
+        <span className="text-btn-ink/60"> · {formatSize(file.sizeKb)}</span>
       </span>
     </DownloadLink>
   );
 }
 
-/** Home: the platform name as text, and "Download all" when any kit exists. */
+/** Right side of every navbar: the theme toggle, just left of the page's download button. */
+function Actions({ children }: { children?: React.ReactNode }) {
+  return (
+    <div className="ml-auto flex items-center gap-2">
+      <ThemeToggle />
+      {children}
+    </div>
+  );
+}
+
+/** Home (and 404): the platform name as text, and "Download all" when any kit exists. */
 export function HomeTopBar({ all }: { all: FileRef | null }) {
   return (
     <StickyBar>
-      <a href={withBase("/")} className="motion-colors rounded-[6px] text-body font-semibold tracking-[-0.01em] hover:text-ink-soft">
+      <a href={withBase("/")} className="motion-colors rounded-[6px] text-body font-semibold tracking-[-0.01em] hover:text-muted">
         {SITE_NAME}
       </a>
-      {all && <KitButton file={all} label="Download all" />}
+      <Actions>{all && <KitButton file={all} label="Download all" />}</Actions>
     </StickyBar>
   );
 }
@@ -61,7 +72,7 @@ export function BrandTopBar({ brand }: { brand: Pick<BrandView, "name" | "kit"> 
           </li>
         </ol>
       </nav>
-      {brand.kit && <KitButton file={brand.kit} label="Download kit" compact />}
+      <Actions>{brand.kit && <KitButton file={brand.kit} label="Download kit" compact />}</Actions>
     </StickyBar>
   );
 }

@@ -7,8 +7,9 @@ import type { VariantView } from "@/lib/view";
 import { DownloadLink } from "../ui/DownloadLink";
 
 /**
- * "Download SVG" plus a format menu (menu-button pattern). `onDark` flips it to a
- * white button so it stays visible on dark stages.
+ * "Download SVG" plus a format menu (menu-button pattern). On the stage it contrasts with the
+ * variant's background (`onDark` makes it white); under the stage, on phones, it's the page's
+ * primary button.
  */
 export function DownloadSplitButton({ variant, onDark }: { variant: VariantView; onDark: boolean }) {
   const [open, setOpen] = useState(false);
@@ -91,11 +92,13 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
     }
   };
 
-  // `onDark` only applies from `sm` up: on phones the button sits under the stage, on the page.
-  const tone = onDark
-    ? "bg-ink text-on-dark hover:bg-ink-soft sm:bg-surface sm:text-ink sm:hover:bg-hover sm:focus-visible:outline-on-dark"
-    : "bg-ink text-on-dark hover:bg-ink-soft";
-  const divider = onDark ? "border-on-dark/15 sm:border-ink/10" : "border-on-dark/15";
+  // Stage colors only apply from `sm` up: on phones the button sits under the stage, on the page.
+  const tone = `bg-btn text-btn-ink hover:bg-btn-hover ${
+    onDark
+      ? "sm:bg-on-dark sm:text-on-light sm:hover:bg-on-dark/90 sm:focus-visible:outline-on-dark"
+      : "sm:bg-on-light sm:text-on-dark sm:hover:bg-on-light/85 sm:focus-visible:outline-on-light"
+  }`;
+  const divider = `border-btn-ink/15 ${onDark ? "sm:border-on-light/10" : "sm:border-on-dark/15"}`;
 
   return (
     <div ref={rootRef} className="relative">

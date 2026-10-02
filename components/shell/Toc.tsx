@@ -140,14 +140,14 @@ export function TocChips({ items }: { items: TocItem[] }) {
               aria-current={item.id === active ? "location" : undefined}
               className={`motion-colors flex h-8 items-center gap-2 rounded-full border px-3 text-small font-medium ${
                 item.id === active
-                  ? "border-ink bg-ink text-on-dark"
+                  ? "border-btn bg-btn text-btn-ink"
                   : "border-control bg-surface text-muted hover:text-ink"
               }`}
             >
               {item.label}
               {/* Full-strength muted text: 11px needs 4.5:1, so no opacity tricks here. */}
               {(item.soon || item.count !== undefined) && (
-                <span className={`text-caption font-normal tabular-nums ${item.id === active ? "text-on-dark/75" : "text-muted"}`}>
+                <span className={`text-caption font-normal tabular-nums ${item.id === active ? "text-btn-ink/75" : "text-muted"}`}>
                   {item.soon ? "Soon" : item.count}
                 </span>
               )}

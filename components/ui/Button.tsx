@@ -9,7 +9,7 @@ const base =
   "disabled:pointer-events-none disabled:opacity-50";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-on-dark hover:bg-ink-soft",
+  primary: "bg-btn text-btn-ink hover:bg-btn-hover",
   ghost: "border border-control bg-surface text-ink hover:border-strong hover:bg-hover",
   quiet: "text-muted hover:bg-hover hover:text-ink",
 };

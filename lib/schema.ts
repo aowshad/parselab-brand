@@ -61,15 +61,11 @@ export const brandSchema = z
     status: z.enum(["live", "soon"]),
     /** Position on the home page; lower comes first. Ties sort by name. */
     order: z.number().int().default(100),
-    /** Home card preview. Without it the card shows the brand's initial on a neutral tile. */
-    theme: z
-      .object({
-        /** Any CSS background, e.g. a color or a radial-gradient wash. */
-        previewBg: z.string().min(1),
-        /** Variant id shown on the card, usually the full logo. */
-        cardLogo: slug,
-      })
-      .optional(),
+    /**
+     * Variant id for the link-preview (OG) image, drawn on that variant's background.
+     * Defaults to the first logo. Home cards don't use it: they follow the site theme.
+     */
+    ogLogo: slug.optional(),
     updatedAt: z.iso.date("must be an ISO date (YYYY-MM-DD)"),
     contact: z.email(),
     logoGroups: z.array(logoGroupSchema).default([]),
@@ -81,8 +77,8 @@ export const brandSchema = z
     }
 
     const ids = brand.logoGroups.flatMap((g) => g.variants.map((v) => v.id));
-    if (brand.theme && !ids.includes(brand.theme.cardLogo)) {
-      ctx.addIssue({ code: "custom", path: ["theme", "cardLogo"], message: `no variant with id "${brand.theme.cardLogo}"` });
+    if (brand.ogLogo && !ids.includes(brand.ogLogo)) {
+      ctx.addIssue({ code: "custom", path: ["ogLogo"], message: `no variant with id "${brand.ogLogo}"` });
     }
 
     const groupKeys = new Set<string>();

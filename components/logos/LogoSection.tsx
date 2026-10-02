@@ -3,6 +3,8 @@
 import { Download, Info } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { formatSize } from "@/lib/format";
+import { useTheme } from "@/lib/theme";
+import { defaultVariant } from "@/lib/variants";
 import type { LogoGroupView } from "@/lib/view";
 import { buttonClass } from "../ui/Button";
 import { DownloadLink } from "../ui/DownloadLink";
@@ -13,15 +15,15 @@ import { VARIANT_PANEL_ID, VariantTabs, variantTabId } from "./VariantTabs";
 
 export function LogoSection({ brandName, groups }: { brandName: string; groups: LogoGroupView[] }) {
   const [groupKey, setGroupKey] = useState(groups[0]!.key);
-  // Selected variant per logo type, so switching types and back keeps your place.
-  const [selected, setSelected] = useState<Record<string, string>>(() =>
-    Object.fromEntries(groups.map((g) => [g.key, g.variants[0]!.id])),
-  );
+  // Variants picked per logo type (by click or deep link), so switching types and back keeps your
+  // place. Types you haven't picked in show the theme's default: On dark in dark mode, On light in light.
+  const [selected, setSelected] = useState<Record<string, string>>({});
+  const theme = useTheme();
   const [transparent, setTransparent] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
   const group = groups.find((g) => g.key === groupKey) ?? groups[0]!;
-  const variant = group.variants.find((v) => v.id === selected[group.key]) ?? group.variants[0]!;
+  const variant = group.variants.find((v) => v.id === selected[group.key]) ?? defaultVariant(group.variants, theme);
   const allVariants = groups.flatMap((g) => g.variants);
 
   // Deep link: ?logo=<groupKey>&variant=<variantId> selects that tab on load.
@@ -38,18 +40,19 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
     if (!window.location.hash) sectionRef.current?.scrollIntoView();
   }, [groups]);
 
-  // Keep the URL shareable without adding history entries or scrolling.
-  const syncUrl = (logo: string, variantId: string) => {
+  // Keep the URL shareable without adding history entries or scrolling. Only a variant you picked
+  // goes in the link; otherwise whoever opens it gets their own theme's default.
+  const syncUrl = (logo: string, variantId: string | undefined) => {
     const url = new URL(window.location.href);
     url.searchParams.set("logo", logo);
-    url.searchParams.set("variant", variantId);
+    if (variantId) url.searchParams.set("variant", variantId);
+    else url.searchParams.delete("variant");
     window.history.replaceState(window.history.state, "", url);
   };
 
   const selectGroup = (key: string) => {
     setGroupKey(key);
-    const g = groups.find((x) => x.key === key)!;
-    syncUrl(key, selected[key] ?? g.variants[0]!.id);
+    syncUrl(key, selected[key]);
   };
 
   const selectVariant = (id: string) => {

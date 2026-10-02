@@ -7,9 +7,10 @@ import { useCopy } from "../ui/CopyButton";
 
 const COPIED_MS = 1500;
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
-const hairline = "shadow-[inset_0_0_0_1px_rgb(0_0_0/0.06)]";
+/** Inset edge, so dark colors stay visible on a dark page (and light ones on a light page). */
+const hairline = "shadow-[inset_0_0_0_1px_var(--swatch-edge)]";
 /** Frosted, so it reads on any color. */
-const frosted = "bg-white/85 text-ink shadow-pill backdrop-blur-[8px]";
+const frosted = "bg-chip text-chip-ink shadow-pill backdrop-blur-[8px]";
 
 /** Copies a hex and remembers which one, for a 1.5s "Copied" state. */
 function useCopied() {
@@ -92,8 +93,8 @@ export function ColorCard({ color }: { color: ColorView }) {
                 >
                   <span
                     aria-hidden
-                    // Dark and below the chip: a frosted tooltip would vanish on the white card, and above it would cover the name.
-                    className="motion-fade pointer-events-none absolute left-1/2 top-full z-10 mt-2 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-ink px-2 py-1 tabular-nums text-caption text-on-dark opacity-0 shadow-pill group-hover:opacity-100 group-focus-visible:opacity-100"
+                    // Inverted and below the chip: a frosted tooltip would vanish on the card, and above it would cover the name.
+                    className="motion-fade pointer-events-none absolute left-1/2 top-full z-10 mt-2 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-btn px-2 py-1 tabular-nums text-caption text-btn-ink opacity-0 shadow-pill group-hover:opacity-100 group-focus-visible:opacity-100"
                   >
                     {copied === hex ? (
                       <>

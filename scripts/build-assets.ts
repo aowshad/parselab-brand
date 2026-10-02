@@ -294,11 +294,13 @@ async function buildBrand(brand: Brand, cache: Cache, stats: { rendered: number;
     assets.kit = await buildZip(path.join(out, `${brand.slug}-brand-kit.zip`), allIds, colorEntries);
   }
 
-  // Link preview: the card logo (usually the full logo) on that variant's own background.
-  const cardVariant = brand.theme && brand.logoGroups.flatMap((g) => g.variants).find((v) => v.id === brand.theme!.cardLogo);
+  // Link preview: `ogLogo` (else the first logo) on that variant's own background. Fixed design,
+  // independent of the site theme.
+  const allVariants = brand.logoGroups.flatMap((g) => g.variants);
+  const ogVariant = allVariants.find((v) => v.id === brand.ogLogo) ?? allVariants[0];
   const ogOut = path.join(out, "og.png");
-  const logoSvg = cardVariant ? fs.readFileSync(path.join(svgDir, `${brand.slug}-${cardVariant.id}.svg`), "utf8") : null;
-  fs.writeFileSync(ogOut, renderOgPng(brandOgSvg(brand, logoSvg, cardVariant?.previewBg ?? "#EEEFF2")));
+  const logoSvg = ogVariant ? fs.readFileSync(path.join(svgDir, `${brand.slug}-${ogVariant.id}.svg`), "utf8") : null;
+  fs.writeFileSync(ogOut, renderOgPng(brandOgSvg(brand, logoSvg, ogVariant?.previewBg ?? "#EEEFF2")));
   keep.add(ogOut);
   assets.og = fileRef(ogOut);
 

@@ -23,6 +23,7 @@ Set `BASE_PATH=/sub-path` when building for a host that serves the site from a s
 ## Sharing and shortcuts
 
 - **Deep links:** `/<brand>?logo=<groupKey>&variant=<variantId>` opens that logo, e.g. `/parselab?logo=icon&variant=icon-white`. Either parameter works alone. The URL updates as you switch tabs, so "Copy link" shares the current logo.
+- **Theme:** the navbar toggle cycles Light → Dark → System (the default, following the OS). The choice is saved in `localStorage` and applied by an inline script before first paint ([`lib/theme-script.ts`](lib/theme-script.ts)). Colors are CSS variables in [`app/globals.css`](app/globals.css); OG images don't change with the theme.
 - **Section anchors:** `#logos`, `#colors`, `#typography`, `#usage`.
 - **Keyboard:** arrow keys, Home and End move between tabs and through the download menu, and Esc closes the menu. While focus is in the logo section, `T` toggles the transparency preview and `D` downloads the current SVG.
 
@@ -65,9 +66,14 @@ The schema lives in [`lib/schema.ts`](lib/schema.ts). Copy [`content/brands/pars
 | `order` | Optional position on the home page, lower first (default 100, ties by name). |
 | `updatedAt` | `YYYY-MM-DD`. |
 | `contact` | Email shown in the footer. |
-| `theme` | Optional home card preview: `previewBg` (any CSS background, e.g. a radial-gradient wash) and `cardLogo` (a variant id). Without it the card shows the brand's initial. |
+| `ogLogo` | Optional variant id for the 1200×630 link-preview image, drawn on that variant's `previewBg`. Defaults to the first variant. |
 | `logoGroups[]` | Any number of groups (`key`, `label`, `description`), each with any number of `variants`. Only list types and variants that really exist. |
-| `variants[]` | `id` (unique within the brand, names the output files), `name` (switcher label, keep it short: "On dark"), `file` (inside `logos/`), `previewBg` (canvas background), optional `dot` (swatch before the label, defaults to `previewBg`), `usage` (one-line hint). |
+| `variants[]` | `id` (unique within the brand, names the output files; the suffix says what it's for, see below), `name` (switcher label, keep it short: "On dark"), `file` (inside `logos/`), `previewBg` (canvas background), optional `dot` (swatch before the label, defaults to `previewBg`), `usage` (one-line hint). |
 | `palettes[]` | `name` + `colors[]`. A color is `name`, `role`, `hex` (optional `cmyk`, `pantone`; RGB and HSL are computed) or `name`, `role`, `gradient: { angle, stops: [{ hex, at }] }`. |
 
-The hero and navbar icon is the variant with id `icon-brand` (falls back to the first variant on a white tile, then to the brand's initial). Replacing a logo means dropping in a new SVG with the same filename. Typography and Usage guidelines show "Coming soon" until they get a content model.
+Variant ids end in what they're made for: `-light-bg` (On light), `-dark-bg` (On dark), `-black`, `-white`; anything else (`icon-brand`, `square-dark`) is a self-contained tile. That drives the theme ([`lib/variants.ts`](lib/variants.ts)):
+
+- **Home cards** have one thumbnail background per theme. Light mode shows the Full logo's `-light-bg` variant (else `-black`), dark mode its `-dark-bg` (else `-white`). As a last resort the other theme's logo sits on a small plate of its own `previewBg`. No Full logo: the same order on the Icon group. No logos: the brand name.
+- **Logo preview** starts on On dark in dark mode and On light in light mode, until a variant is picked.
+
+The hero icon and favicon is the variant with id `icon-brand` (falls back to the first variant on its own `previewBg`, then to the brand's initial). Replacing a logo means dropping in a new SVG with the same filename. Typography and Usage guidelines show "Coming soon" until they get a content model.

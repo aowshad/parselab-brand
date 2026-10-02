@@ -45,16 +45,17 @@ export function LogoStage({
   const onDark = active.darkStage;
   const { loaded, mark, refFor } = useLoaded();
   // Below 640px the controls sit in a toolbar under the stage (a 2:1 stage is too short to
-  // overlay them without covering the logo), so the on-stage colors only apply from `sm` up.
+  // overlay them without covering the logo), so they use the page's theme there. From `sm` up
+  // they sit on the variant's own background, so they follow that instead of the site theme.
   const chrome = onDark
     ? "sm:bg-on-dark/10 sm:text-on-dark sm:hover:bg-on-dark/20 sm:focus-visible:outline-on-dark sm:border-transparent"
-    : "sm:bg-ink/5 sm:hover:bg-ink/10 sm:border-transparent";
+    : "sm:bg-on-light/5 sm:text-on-light sm:hover:bg-on-light/10 sm:focus-visible:outline-on-light sm:border-transparent";
 
   return (
     <div className="relative">
       <div className="relative aspect-[2/1] max-h-[440px] w-full">
         <div
-          className={`motion-bg-slow absolute inset-0 overflow-hidden rounded-stage border ${onDark ? "border-transparent" : "border-hairline"}`}
+          className={`motion-bg-slow absolute inset-0 overflow-hidden rounded-stage border ${onDark ? "border-transparent dark:border-hairline" : "border-hairline"}`}
         >
           <div className="motion-bg-slow absolute inset-0" style={{ backgroundColor: active.previewBg }} />
           <div

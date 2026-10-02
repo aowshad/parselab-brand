@@ -5,23 +5,141 @@
  * inside assets, the brand icon tile and swatches. Components use the
  * Tailwind utilities generated below (bg-ground, text-ink, border-hairline…),
  * never raw hex values.
+ *
+ * Theme colors are CSS variables that switch with `data-theme` on <html>
+ * (set before first paint by the script in app/layout.tsx). Without a choice,
+ * or without JS, the OS setting decides.
  */
+:root,
+[data-theme="light"] {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-hover: #f4f4f5;
+  --border: #e7e7ea;
+  --border-strong: #d4d4d8;
+  --control: #e4e4e7; /* ghost buttons, dashed placeholders */
+  --track: #f0f0f2; /* segmented controls, chips */
+  --pill: #ffffff; /* the active segment */
+  --ink: #0a0a0b;
+  --muted: #6b6b73; /* 5.1:1 on bg, 4.7:1 on track; keep >= 4.5:1 */
+  --btn-bg: #0a0a0b;
+  --btn-hover: #27272a;
+  --btn-ink: #ffffff;
+  --thumb-bg: #ffffff; /* every home-card thumbnail */
+  --swatch-edge: rgb(0 0 0 / 0.06);
+  --chip-bg: rgb(255 255 255 / 0.85);
+  --chip-ink: #0a0a0b;
+  --success: #22c55e; /* on --btn-bg (toasts) */
+  --danger: #f87171;
+  --shimmer: rgb(255 255 255 / 0.6);
+  --shadow-color: rgb(11 13 18 / 0.08);
+  --shadow-color-soft: rgb(11 13 18 / 0.04);
+}
+
+[data-theme="dark"] {
+  --bg: #0a0a0b;
+  --surface: #111113;
+  --surface-hover: #1a1a1d;
+  --border: #232327;
+  --border-strong: #303036;
+  --control: #2a2a2f;
+  --track: #18181b;
+  --pill: #2a2a2f;
+  --ink: #ededef;
+  --muted: #9a9aa3;
+  --btn-bg: #ededef; /* the primary button inverts */
+  --btn-hover: #d4d4d8;
+  --btn-ink: #0a0a0b;
+  --thumb-bg: #0e0e10;
+  --swatch-edge: rgb(255 255 255 / 0.08);
+  --chip-bg: rgb(24 24 27 / 0.85);
+  --chip-ink: #ededef;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --shimmer: rgb(255 255 255 / 0.06);
+  --shadow-color: rgb(0 0 0 / 0.4);
+  --shadow-color-soft: rgb(0 0 0 / 0.2);
+}
+
+/* No stored choice (or no JS): follow the OS. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: #0a0a0b;
+    --surface: #111113;
+    --surface-hover: #1a1a1d;
+    --border: #232327;
+    --border-strong: #303036;
+    --control: #2a2a2f;
+    --track: #18181b;
+    --pill: #2a2a2f;
+    --ink: #ededef;
+    --muted: #9a9aa3;
+    --btn-bg: #ededef; /* the primary button inverts */
+    --btn-hover: #d4d4d8;
+    --btn-ink: #0a0a0b;
+    --thumb-bg: #0e0e10;
+    --swatch-edge: rgb(255 255 255 / 0.08);
+    --chip-bg: rgb(24 24 27 / 0.85);
+    --chip-ink: #ededef;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --shimmer: rgb(255 255 255 / 0.06);
+    --shadow-color: rgb(0 0 0 / 0.4);
+    --shadow-color-soft: rgb(0 0 0 / 0.2);
+  }
+}
+
+:root {
+  color-scheme: light dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* `dark:` utilities, for the few places that need more than a token swap. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  --color-ground: var(--bg);
+  --color-surface: var(--surface);
+  --color-hover: var(--surface-hover); /* --surface-hover */
+  --color-hairline: var(--border); /* --border */
+  --color-strong: var(--border-strong); /* --border-strong */
+  --color-control: var(--control);
+  --color-track: var(--track);
+  --color-pill: var(--pill);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-btn: var(--btn-bg);
+  --color-btn-hover: var(--btn-hover);
+  --color-btn-ink: var(--btn-ink);
+  --color-thumb: var(--thumb-bg);
+  --color-chip: var(--chip-bg);
+  --color-chip-ink: var(--chip-ink);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+}
+
 @theme {
-  --color-ground: #fafafa;
-  --color-surface: #ffffff;
-  --color-ink: #0b0d12;
-  --color-ink-soft: #16181f;
-  --color-muted: #5b616e; /* 5.95:1 on ground, 5.5:1 on hover; keep >= 4.5:1 */
-  --color-hairline: #ecedf0; /* --border */
-  --color-control: #e4e6ea;
-  --color-strong: #d5d8de; /* --border-strong */
-  --color-hover: #f0f1f3; /* --surface-hover */
-  --color-track: #eeeff2;
-  --color-success: #22c55e;
-  --color-checker: #e6e7eb;
-  --color-checker-dark: #22252d;
-  --color-danger: #f87171; /* on ink */
+  /* Theme-independent: drawn over a logo variant's own background, not the page. */
   --color-on-dark: #ffffff;
+  --color-on-light: #0a0a0b;
+  --color-checker-base: #ffffff;
+  --color-checker: #e6e7eb;
+  --color-checker-dark-base: #16181f;
+  --color-checker-dark: #22252d;
 
   --radius-card: 16px;
   --radius-button: 10px;
@@ -55,7 +173,7 @@
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
-  --shadow-pill: 0 1px 2px rgb(11 13 18 / 0.08), 0 1px 1px rgb(11 13 18 / 0.04);
+  --shadow-pill: 0 1px 2px var(--shadow-color), 0 1px 1px var(--shadow-color-soft);
   --shadow-menu: 0 12px 32px -8px rgb(11 13 18 / 0.22), 0 2px 6px rgb(11 13 18 / 0.08);
   --shadow-toast: 0 10px 30px -6px rgb(11 13 18 / 0.35);
   --shadow-lift: 0 8px 24px -12px rgb(0 0 0 / 0.15);
@@ -192,13 +310,6 @@
   transition: border-color var(--dur-base) var(--ease-out);
 }
 
-/* Faint dot grid for brands that have no logo yet. */
-@utility dot-grid {
-  background-color: var(--color-track);
-  background-image: radial-gradient(rgb(11 13 18 / 0.04) 1px, transparent 1px);
-  background-size: 12px 12px;
-}
-
 /* Loading skeleton: a soft highlight sweeping across, shown until an image has loaded. */
 @utility skeleton {
   position: relative;
@@ -208,7 +319,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
+    background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
     animation: var(--animate-shimmer);
   }
 }
@@ -228,7 +339,7 @@
 
 /* Transparency checkerboard for the logo stage. The dark tone keeps white logos visible. */
 @utility checkerboard {
-  background-color: var(--checker-base, var(--color-surface));
+  background-color: var(--checker-base, var(--color-checker-base));
   background-image: conic-gradient(
     var(--checker-square, var(--color-checker)) 25%,
     transparent 0 50%,
@@ -239,7 +350,7 @@
 }
 
 @utility checkerboard-dark {
-  --checker-base: var(--color-ink-soft);
+  --checker-base: var(--color-checker-dark-base);
   --checker-square: var(--color-checker-dark);
 }
 
@@ -255,6 +366,48 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* Theme switch: colors cross-fade for one --dur-slow (lib/theme.ts sets this briefly; never on load). */
+  [data-theme-switching],
+  [data-theme-switching] *,
+  [data-theme-switching] *::before,
+  [data-theme-switching] *::after {
+    transition:
+      color var(--dur-slow) var(--ease-out),
+      background-color var(--dur-slow) var(--ease-out),
+      border-color var(--dur-slow) var(--ease-out),
+      outline-color var(--dur-slow) var(--ease-out),
+      box-shadow var(--dur-slow) var(--ease-out),
+      fill var(--dur-slow) var(--ease-out),
+      stroke var(--dur-slow) var(--ease-out) !important;
+  }
+}
+
+/* Home-card thumbnails: both themes' logos are in the HTML, and only the current theme's shows. */
+[data-theme="light"] .thumb-dark,
+[data-theme="dark"] .thumb-light {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .thumb-dark {
+    display: none;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .thumb-light {
+    display: none;
+  }
+}
+
+/* Theme toggle: the icon and tooltip for the stored choice, before and after hydration. */
+.theme-option {
+  display: none;
+}
+:root:not([data-theme-pref]) .theme-option[data-option="system"],
+[data-theme-pref="light"] .theme-option[data-option="light"],
+[data-theme-pref="dark"] .theme-option[data-option="dark"],
+[data-theme-pref="system"] .theme-option[data-option="system"] {
+  display: block;
 }
 
 /* Motion off: every state change becomes instant, and nothing waits to appear. */

@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { ToastProvider } from "@/components/ui/Toast";
 import { getManifest } from "@/lib/manifest";
 import { withBase } from "@/lib/paths";
+import { THEME_SCRIPT } from "@/lib/theme-script";
 import "./globals.css";
 
 const DESCRIPTION = "Logos, colors and guidelines for every ParseLab product.";
@@ -27,12 +28,20 @@ export function generateMetadata(): Metadata {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#fafafa",
+  // Browser chrome follows the OS; the page itself follows the visitor's choice.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={GeistSans.variable}>
+    // The inline script sets data-theme / data-theme-pref before React hydrates, hence the warning opt-out.
+    <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
         <ToastProvider>{children}</ToastProvider>
       </body>

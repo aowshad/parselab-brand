@@ -61,7 +61,7 @@ export function SegmentedTabs({
         <span
           aria-hidden
           style={{ width: pill.w, translate: `${pill.x}px 0` }}
-          className={`pointer-events-none absolute left-0 top-1 h-8 rounded-segment-item bg-surface shadow-pill ${animate ? "motion-slide" : ""}`}
+          className={`pointer-events-none absolute left-0 top-1 h-8 rounded-segment-item bg-pill shadow-pill ${animate ? "motion-slide" : ""}`}
         />
       )}
       {items.map((item) => {
@@ -74,14 +74,16 @@ export function SegmentedTabs({
             {...tabProps(item.id)}
             className={`motion-colors relative flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-segment-item px-3 text-small font-medium focus-visible:outline-offset-0 ${
               isActive ? "text-ink" : "text-muted hover:text-ink"
-            } ${isActive && !pill ? "bg-surface shadow-pill" : ""}`}
+            } ${isActive && !pill ? "bg-pill shadow-pill" : ""}`}
           >
             {item.dot && (
               <span
                 aria-hidden
                 style={{ backgroundColor: item.dot }}
-                // Light dots get a hairline so white still reads as a swatch.
-                className={`size-2.5 shrink-0 rounded-full ${isDark(item.dot) ? "" : "ring-1 ring-inset ring-ink/30"}`}
+                // A hairline on dots close to the page's tone, so white (or black, in dark mode) still reads as a swatch.
+                className={`size-2.5 shrink-0 rounded-full ${
+                  isDark(item.dot) ? "dark:ring-1 dark:ring-inset dark:ring-ink/30" : "ring-1 ring-inset ring-ink/30 dark:ring-0"
+                }`}
               />
             )}
             {item.label}

@@ -6,10 +6,7 @@
   "order": 4,
   "updatedAt": "2026-10-02",
   "contact": "brand@parselab.com",
-  "theme": {
-    "previewBg": "#FFFFFF",
-    "cardLogo": "full-light-bg"
-  },
+  "ogLogo": "full-light-bg",
   "logoGroups": [
     {
       "key": "full",
