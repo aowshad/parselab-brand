@@ -1,0 +1,62 @@
+{
+  "slug": "jewelslab",
+  "name": "JewelsLab",
+  "description": "Custom jewelry personalizer for Shopify.",
+  "status": "soon",
+  "order": 3,
+  "updatedAt": "2026-10-02",
+  "contact": "brand@parselab.com",
+  "theme": {
+    "previewBg": "#1A1A1A",
+    "cardLogo": "full-dark-bg"
+  },
+  "logoGroups": [
+    {
+      "key": "full",
+      "label": "Full logo",
+      "description": "Mark + wordmark + tagline. The default logo.",
+      "variants": [
+        { "id": "full-light-bg", "name": "On light", "file": "full-light-bg.svg", "previewBg": "#FFFFFF", "dot": "#FFFFFF", "usage": "Primary lockup for white and light surfaces. Use this one by default." },
+        { "id": "full-dark-bg", "name": "On dark", "file": "full-dark-bg.svg", "previewBg": "#1A1A1A", "dot": "#1A1A1A", "usage": "Gold mark and cream wordmark for dark surfaces, dark UI and video." },
+        { "id": "full-white", "name": "White", "file": "full-white.svg", "previewBg": "#16181F", "dot": "#FFFFFF", "usage": "Single-color version for dark or busy backgrounds and photography." }
+      ]
+    },
+    {
+      "key": "mark",
+      "label": "Mark",
+      "description": "Symbol only, for tight spaces.",
+      "variants": [
+        { "id": "mark-light-bg", "name": "On light", "file": "mark-light-bg.svg", "previewBg": "#FFFFFF", "dot": "#FFFFFF", "usage": "Use when the wordmark appears nearby or space is too tight for the full logo." },
+        { "id": "mark-dark-bg", "name": "On dark", "file": "mark-dark-bg.svg", "previewBg": "#1A1A1A", "dot": "#1A1A1A", "usage": "Gold mark for dark surfaces." },
+        { "id": "mark-white", "name": "White", "file": "mark-white.svg", "previewBg": "#16181F", "dot": "#FFFFFF", "usage": "Single-color mark for dark or busy backgrounds." }
+      ]
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "description": "App icon and favicon tile.",
+      "variants": [
+        { "id": "icon-brand", "name": "Gold", "file": "icon-brand.svg", "previewBg": "#F3F4F6", "dot": "#FFD700", "usage": "Shopify App Store listing, favicons and anywhere the brand needs a self-contained tile." },
+        { "id": "icon-dark", "name": "Dark", "file": "icon-dark.svg", "previewBg": "#F3F4F6", "dot": "#1A1A1A", "usage": "Dark tile for light interfaces where the gold tile would be too loud." }
+      ]
+    },
+    {
+      "key": "square",
+      "label": "Square",
+      "description": "Social avatars and square slots.",
+      "variants": [
+        { "id": "square-brand", "name": "Gold", "file": "square-brand.svg", "previewBg": "#F3F4F6", "dot": "#FFD700", "usage": "Profile pictures on platforms that apply their own corner rounding." },
+        { "id": "square-dark", "name": "Dark", "file": "square-dark.svg", "previewBg": "#F3F4F6", "dot": "#1A1A1A", "usage": "Dark avatar for platforms with a light interface." }
+      ]
+    },
+    {
+      "key": "circle",
+      "label": "Circle",
+      "description": "Circular profile crops.",
+      "variants": [
+        { "id": "circle-brand", "name": "Gold", "file": "circle-brand.svg", "previewBg": "#F3F4F6", "dot": "#FFD700", "usage": "Pre-cropped avatar for circular slots, so the mark is never clipped." },
+        { "id": "circle-dark", "name": "Dark", "file": "circle-dark.svg", "previewBg": "#F3F4F6", "dot": "#1A1A1A", "usage": "Dark circular avatar for light interfaces." }
+      ]
+    }
+  ]
+}
