@@ -28,9 +28,10 @@ export default async function BrandPage({ params }: Props) {
   const brand = getBrandView((await params).brand);
   if (!brand) notFound();
 
+  const nav = getBrandNav();
   const sections: PageSection[] = [
     { id: "logos", label: "Logos", count: brand.counts.variants },
-    { id: "colors", label: "Color palette", count: brand.counts.colors },
+    { id: "colors", label: "Color palette", count: brand.counts.colors, planned: brand.counts.colors === 0 },
     ...(["typography", "guidelines"] as const).map((k) => ({
       id: SECTION_INFO[k].id,
       label: SECTION_INFO[k].title,
@@ -40,9 +41,9 @@ export default async function BrandPage({ params }: Props) {
 
   return (
     <div id="top">
-      <TopBar kit={brand.kit} />
+      <TopBar kit={brand.kit} brands={nav} current={brand.slug} sections={sections} />
       <div className="mx-auto flex max-w-[1440px]">
-        <Sidebar brands={getBrandNav()} current={brand.slug} sections={sections} />
+        <Sidebar brands={nav} current={brand.slug} sections={sections} />
         <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12">
           <div className="mx-auto max-w-[1040px]">
             <BrandHero brand={brand} />

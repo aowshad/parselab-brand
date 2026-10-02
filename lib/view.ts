@@ -24,6 +24,8 @@ export type BrandView = Omit<Brand, "logoGroups" | "palettes"> & {
   kit: FileRef;
   colorFiles: { css: FileRef; json: FileRef };
   heroIcon: VariantView;
+  /** False when falling back to a non-tile variant, which then needs a tile behind it. */
+  heroIconIsTile: boolean;
   counts: { variants: number; colors: number };
 };
 
@@ -77,6 +79,7 @@ export function getBrandView(slug: string): BrandView | undefined {
     kit: assets.kit,
     colorFiles: assets.colors,
     heroIcon: allVariants.find((v) => v.id === "icon-brand") ?? allVariants[0]!,
+    heroIconIsTile: allVariants.some((v) => v.id === "icon-brand"),
     counts: { variants: allVariants.length, colors: brand.palettes.reduce((n, p) => n + p.colors.length, 0) },
   };
 }

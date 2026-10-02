@@ -10,20 +10,26 @@ export function BrandHero({ brand }: { brand: BrandView }) {
   const { variants, colors } = brand.counts;
   const meta = [
     `${variants} logo ${variants === 1 ? "variant" : "variants"}`,
-    `${colors} brand ${colors === 1 ? "color" : "colors"}`,
+    ...(colors > 0 ? [`${colors} brand ${colors === 1 ? "color" : "colors"}`] : []),
     "SVG + PNG for every file",
     `Updated ${formatDate(brand.updatedAt)}`,
   ];
 
   return (
     <header className="pt-10 sm:pt-14">
-      <img
-        src={withBase(brand.heroIcon.assets.svg.path)}
-        alt=""
-        width={76}
-        height={76}
-        className="size-[76px] rounded-[18px] object-contain shadow-pill"
-      />
+      {brand.heroIconIsTile ? (
+        <img
+          src={withBase(brand.heroIcon.assets.svg.path)}
+          alt=""
+          width={76}
+          height={76}
+          className="size-[76px] rounded-[18px] object-contain shadow-pill"
+        />
+      ) : (
+        <span className="grid size-[76px] place-items-center rounded-[18px] border border-hairline bg-surface p-3.5 shadow-pill">
+          <img src={withBase(brand.heroIcon.assets.svg.path)} alt="" width={48} height={48} className="size-full object-contain" />
+        </span>
+      )}
       <p className="mt-6 text-[13px] font-medium text-muted">Brand assets & guidelines</p>
       <h1 className="mt-1.5 text-4xl font-semibold tracking-[-0.025em] sm:text-5xl">{brand.name}</h1>
       <p className="mt-3 max-w-xl text-base text-muted sm:text-lg">{brand.description}</p>

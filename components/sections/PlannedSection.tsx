@@ -47,7 +47,7 @@ export function MoreAssets({ brand }: { brand: Brand }) {
             {planned.map((k) => {
               const { id, title, description, icon: Icon } = SECTION_INFO[k];
               return (
-                <li key={k} id={id} className="scroll-mt-24 rounded-card border border-dashed border-control p-5">
+                <li key={k} id={id} className="rounded-card border border-dashed border-control p-5">
                   <div className="flex items-center justify-between">
                     <span className="grid size-9 place-items-center rounded-button bg-track text-muted">
                       <Icon aria-hidden className="size-4" />

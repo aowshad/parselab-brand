@@ -101,6 +101,9 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
       <div className="flex rounded-button shadow-pill">
         <DownloadLink
           file={svg}
+          data-primary-download
+          aria-keyshortcuts="D"
+          title="Download SVG (D)"
           className={`inline-flex h-10 items-center gap-2 rounded-l-button pl-4 pr-3.5 text-sm font-medium transition-colors duration-150 ease-out-soft ${tone}`}
         >
           <Download aria-hidden className="size-4" />

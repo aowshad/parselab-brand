@@ -73,6 +73,8 @@ export function LogoStage({
       <button
         type="button"
         aria-pressed={transparent}
+        aria-keyshortcuts="T"
+        title="Show transparency (T)"
         onClick={onToggleTransparent}
         className={`absolute right-4 top-4 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium backdrop-blur-sm transition-colors duration-150 ease-out-soft ${chrome}`}
       >

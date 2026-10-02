@@ -13,6 +13,12 @@ pnpm build && npx serve out
 
 Set `BASE_PATH=/sub-path` when building for a host that serves the site from a sub-path (e.g. GitHub Pages project sites).
 
+## Sharing and shortcuts
+
+- **Deep links:** `/<brand>?logo=<groupKey>&variant=<variantId>` opens that logo, e.g. `/parselab?logo=icon&variant=icon-white`. Either parameter works alone. The URL updates as you switch tabs, so "Copy link" shares the current logo.
+- **Section anchors:** `#logos`, `#colors`, `#typography`, `#guidelines`.
+- **Keyboard:** arrow keys, Home and End move between tabs and through the download menu, and Esc closes the menu. While focus is in the logo section, `T` toggles the transparency preview and `D` downloads the current SVG.
+
 ## Asset pipeline
 
 `pnpm assets` ([`scripts/build-assets.ts`](scripts/build-assets.ts)) runs automatically before `pnpm dev` and `pnpm build`. For each published brand it writes to `public/brands/<slug>/` (git-ignored):
