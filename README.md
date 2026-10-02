@@ -20,6 +20,12 @@ Set `SITE_URL=https://your-domain` when building for production, so link preview
 
 Set `BASE_PATH=/sub-path` when building for a host that serves the site from a sub-path (e.g. GitHub Pages project sites).
 
+## Public preview (GitHub Pages)
+
+**https://aowshad.github.io/parselab-brand/**
+
+Every push to `main` rebuilds and publishes the site through [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): it generates the assets, builds with `BASE_PATH=/parselab-brand` and `SITE_URL=https://aowshad.github.io`, and deploys `out/`. Watch a deploy in the repo's **Actions** tab; it takes about two minutes. Pages must be set to **Source: GitHub Actions** (Settings → Pages), otherwise GitHub shows this README instead of the site.
+
 ## Sharing and shortcuts
 
 - **Deep links:** `/<brand>?logo=<groupKey>&variant=<variantId>` opens that logo, e.g. `/parselab?logo=icon&variant=icon-white`. Either parameter works alone. The URL updates as you switch tabs, so "Copy link" shares the current logo.

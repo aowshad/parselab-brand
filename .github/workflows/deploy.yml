@@ -1,0 +1,57 @@
+# Builds the static site and publishes it to GitHub Pages on every push to main.
+# Public URL: https://aowshad.github.io/parselab-brand/
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push waits rather than cancelling a deploy in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # pnpm version comes from "packageManager" in package.json.
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      # Logos, PNGs, zips and OG images are generated (public/brands is not committed).
+      - run: pnpm assets
+      - run: pnpm build
+        env:
+          # e.g. /parselab-brand and https://aowshad.github.io, so links and previews resolve.
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -68,7 +68,7 @@ export function BrandCard({ brand }: { brand: BrandCardView }) {
 
   return (
     <a
-      href={withBase(`/${brand.slug}`)}
+      href={withBase(`/${brand.slug}/`)}
       className="motion-card group flex h-full w-full flex-col overflow-hidden rounded-card border border-hairline bg-surface hover:-translate-y-0.5 hover:border-strong hover:shadow-lift"
     >
       <div className="grid aspect-[16/10] place-items-center border-b border-hairline bg-thumb">

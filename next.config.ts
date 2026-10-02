@@ -6,6 +6,8 @@ const basePath = process.env.BASE_PATH || "";
 const nextConfig: NextConfig = {
   output: "export",
   basePath,
+  // Pages export as <slug>/index.html, which every static host (GitHub Pages included) serves at /<slug>/.
+  trailingSlash: true,
   images: { unoptimized: true },
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
 };

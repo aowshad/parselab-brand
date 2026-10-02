@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     // The tab and link previews show this brand, not the platform.
     icons: brand.icon ? { icon: withBase(brand.icon.src) } : undefined,
-    openGraph: { title: `${brand.name} — Brand assets`, description, url: withBase(`/${brand.slug}`), images: [image] },
+    openGraph: { title: `${brand.name} — Brand assets`, description, url: withBase(`/${brand.slug}/`), images: [image] },
     twitter: { card: "summary_large_image", title: `${brand.name} — Brand assets`, description, images: [image.url] },
   };
 }
