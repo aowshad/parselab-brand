@@ -7,3 +7,7 @@ public/brands/
 next-env.d.ts
 *.tsbuildinfo
 .DS_Store
+
+# Local secrets (keep .env.example)
+.env*
+!.env.example
