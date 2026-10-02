@@ -51,10 +51,14 @@
   }
 }
 
-/* next/font sets these on <html>, so they must resolve where used. */
+/* next/font sets this on <html>, so it must resolve where used. One typeface everywhere:
+   values (hex codes, sizes, file names) use tabular-nums in the same sans-serif. */
+@theme {
+  /* Drop Tailwind's built-in font families so only the sans below exists. */
+  --font-*: initial;
+}
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
@@ -84,6 +88,15 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+  }
+
+  /* Tailwind's preflight gives these a fixed-width stack; keep them in the one typeface. */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
   }
 
   :focus-visible {

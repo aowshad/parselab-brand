@@ -23,11 +23,11 @@ export function PaletteSection({ palettes, files }: Pick<BrandView, "palettes"> 
         <span className="mr-1 text-sm text-muted">Download palette</span>
         <DownloadLink file={files.css} className={buttonClass({ variant: "ghost", size: "sm" })}>
           <Download aria-hidden className="size-3.5" />
-          <span className="font-mono">colors.css</span>
+          <span className="tabular-nums">colors.css</span>
         </DownloadLink>
         <DownloadLink file={files.json} className={buttonClass({ variant: "ghost", size: "sm" })}>
           <Download aria-hidden className="size-3.5" />
-          <span className="font-mono">colors.json</span>
+          <span className="tabular-nums">colors.json</span>
         </DownloadLink>
       </div>
     </>

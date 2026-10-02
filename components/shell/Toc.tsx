@@ -65,7 +65,7 @@ function useActiveSection(ids: string[]): string | undefined {
 }
 
 const Badge = ({ item }: { item: TocItem }) =>
-  item.soon ? <Chip className="ml-auto">Soon</Chip> : item.count !== undefined ? <span className="ml-auto font-mono text-xs">{item.count}</span> : null;
+  item.soon ? <Chip className="ml-auto">Soon</Chip> : item.count !== undefined ? <span className="ml-auto tabular-nums text-xs">{item.count}</span> : null;
 
 /** Desktop: sticky "On this page" list. Hidden below 900px, where TocChips takes over. */
 export function TocSidebar({ items }: { items: TocItem[] }) {
@@ -128,7 +128,7 @@ export function TocChips({ items }: { items: TocItem[] }) {
               {item.label}
               {/* Full-strength muted text: 11px needs 4.5:1, so no opacity tricks here. */}
               {(item.soon || item.count !== undefined) && (
-                <span className={`text-[11px] font-normal ${item.soon ? "" : "font-mono"} ${item.id === active ? "text-on-dark/75" : "text-muted"}`}>
+                <span className={`text-[11px] font-normal ${item.soon ? "" : "tabular-nums"} ${item.id === active ? "text-on-dark/75" : "text-muted"}`}>
                   {item.soon ? "Soon" : item.count}
                 </span>
               )}

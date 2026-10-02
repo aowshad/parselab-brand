@@ -32,7 +32,7 @@ export function BrandHero({ brand }: { brand: BrandView }) {
           <DownloadLink file={brand.kit} className={buttonClass({ variant: "primary" })}>
             <Download aria-hidden className="size-4" />
             Download brand kit
-            <span className="hidden font-mono text-xs text-on-dark/60 sm:inline">{formatSize(brand.kit.sizeKb)}</span>
+            <span className="hidden tabular-nums text-xs text-on-dark/60 sm:inline">{formatSize(brand.kit.sizeKb)}</span>
           </DownloadLink>
         )}
       </div>

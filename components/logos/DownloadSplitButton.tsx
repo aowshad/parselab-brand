@@ -154,9 +154,9 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
                 onClick={() => close(true)}
                 className="flex h-9 items-center gap-3 rounded-[8px] px-2.5 text-sm outline-none hover:bg-hover focus-visible:bg-hover focus-visible:outline-none"
               >
-                <span className="font-medium">{item.label}</span>
-                <span className="text-xs text-muted">{item.detail}</span>
-                <span className="ml-auto font-mono text-xs text-muted">{formatSize(item.file.sizeKb)}</span>
+                <span className="font-medium tabular-nums">{item.label}</span>
+                <span className="text-xs text-muted tabular-nums">{item.detail}</span>
+                <span className="ml-auto tabular-nums text-xs text-muted">{formatSize(item.file.sizeKb)}</span>
               </DownloadLink>
             </div>
           ))}

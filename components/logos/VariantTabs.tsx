@@ -29,7 +29,7 @@ export function VariantTabs({
         active={active}
         onSelect={onSelect}
       />
-      {current && <span className="ml-auto font-mono text-xs text-muted">{current.assets.svg.filename}</span>}
+      {current && <span className="ml-auto tabular-nums text-xs text-muted">{current.assets.svg.filename}</span>}
     </div>
   );
 }

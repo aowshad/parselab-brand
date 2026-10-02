@@ -43,10 +43,10 @@ export function ColorCard({ color }: { color: ColorView }) {
           {/* Hover/focus only, so touch devices show nothing extra; a tap still copies and toasts. */}
           <span
             aria-hidden
-            className={`absolute bottom-2.5 right-2.5 inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 font-mono text-xs opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 ${frosted}`}
+            className={`absolute bottom-2.5 right-2.5 inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 tabular-nums text-xs opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 ${frosted}`}
           >
             {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-            {copied ? <span className="font-sans font-medium">Copied</span> : color.hex}
+            {copied ? <span className="font-medium">Copied</span> : color.hex}
           </span>
         </button>
       ) : (
@@ -62,7 +62,7 @@ export function ColorCard({ color }: { color: ColorView }) {
               type="button"
               onClick={() => run(color.hex)}
               aria-label={`Copy hex ${color.hex}`}
-              className={`shrink-0 rounded-[6px] font-mono text-[13px] text-muted transition-colors duration-150 hover:text-ink ${focusRing}`}
+              className={`shrink-0 rounded-[6px] tabular-nums text-[13px] text-muted transition-colors duration-150 hover:text-ink ${focusRing}`}
             >
               {color.hex}
             </button>
@@ -83,12 +83,12 @@ export function ColorCard({ color }: { color: ColorView }) {
                   <span
                     aria-hidden
                     // Dark and below the chip: a frosted tooltip would vanish on the white card, and above it would cover the name.
-                    className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-ink px-2 py-1 font-mono text-[11px] text-on-dark opacity-0 shadow-pill transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-ink px-2 py-1 tabular-nums text-[11px] text-on-dark opacity-0 shadow-pill transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
                   >
                     {copied === hex ? (
                       <>
                         <Check className="size-3" />
-                        <span className="font-sans font-medium">Copied</span>
+                        <span className="font-medium">Copied</span>
                       </>
                     ) : (
                       hex

@@ -113,7 +113,7 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
           <DownloadLink file={group.zip} className={buttonClass({ variant: "ghost", size: "sm" })}>
             <Download aria-hidden className="size-3.5" />
             All {group.label} files
-            <span className="font-mono text-xs text-muted">.zip · {formatSize(group.zip.sizeKb)}</span>
+            <span className="tabular-nums text-xs text-muted">.zip · {formatSize(group.zip.sizeKb)}</span>
           </DownloadLink>
         </div>
 

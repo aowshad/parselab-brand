@@ -37,7 +37,7 @@ export function BrandCard({ brand }: { brand: BrandCardView }) {
         </div>
         <p className="mt-1 text-sm text-muted">{brand.description}</p>
         <div className="mt-4 flex items-center justify-between pt-1">
-          <span className="font-mono text-xs text-muted">{meta}</span>
+          <span className="tabular-nums text-xs text-muted">{meta}</span>
           <ArrowRight
             aria-hidden
             className="size-4 text-muted transition-transform duration-200 ease-out-soft group-hover:translate-x-0.5 group-hover:text-ink"
