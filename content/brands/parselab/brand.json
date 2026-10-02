@@ -61,10 +61,10 @@
     {
       "name": "Main Palette",
       "colors": [
-        { "name": "Blue",   "role": "Primary",              "hex": "#2B5CFF" },
-        { "name": "Orange", "role": "Accent",               "hex": "#FF7A1A" },
-        { "name": "Black",  "role": "Text & dark surfaces", "hex": "#0B0D12" },
-        { "name": "White",  "role": "Backgrounds",          "hex": "#FFFFFF" }
+        { "name": "Blue",   "role": "Primary",          "hex": "#6CA9F3" },
+        { "name": "Orange", "role": "Accent",           "hex": "#FF9933" },
+        { "name": "Grey",   "role": "Wordmark & text",  "hex": "#696969" },
+        { "name": "White",  "role": "Backgrounds",      "hex": "#FFFFFF" }
       ]
     }
   ],
