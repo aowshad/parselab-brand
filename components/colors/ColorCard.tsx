@@ -20,7 +20,7 @@ export function ColorCard({ color }: { color: ColorView }) {
           color.darkSwatch ? "text-on-dark" : "text-ink"
         } ${color.faint ? "border-b border-hairline" : ""}`}
       >
-        <span className="text-xs font-medium opacity-75">{color.role}</span>
+        <span className="text-xs font-medium">{color.role}</span>
         <span className="flex items-end justify-between gap-2">
           <span className="text-lg font-semibold tracking-[-0.01em]">{color.name}</span>
           <Copy aria-hidden className="size-4 opacity-0 transition-opacity duration-150 group-hover:opacity-75 group-focus-visible:opacity-75" />
