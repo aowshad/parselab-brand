@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "ParseLab brand assets & guidelines platform",
   "scripts": {
-    "dev": "tsx scripts/build-assets.ts && next dev",
+    "dev": "tsx scripts/dev.ts",
     "prebuild": "tsx scripts/build-assets.ts",
     "build": "next build",
     "start": "npx serve out",

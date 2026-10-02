@@ -11,6 +11,8 @@ pnpm dev               # http://localhost:3000
 pnpm build && npx serve out
 ```
 
+`pnpm dev` watches `content/` and regenerates assets when a `brand.json` or SVG changes; refresh the browser to see it.
+
 Set `BASE_PATH=/sub-path` when building for a host that serves the site from a sub-path (e.g. GitHub Pages project sites).
 
 ## Sharing and shortcuts

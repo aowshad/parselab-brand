@@ -78,11 +78,13 @@ function loadBrandFolder(folder: string, problems: string[]): Brand | null {
   return parsed.success ? parsed.data : null;
 }
 
+// Cached for builds; in `next dev` content is re-read on every request so edits show on refresh.
+const useCache = process.env.NODE_ENV === "production";
 let cache: Brand[] | null = null;
 
 /** Every brand (published and draft), validated. Throws ContentError listing all problems. */
 export function getAllBrands(): Brand[] {
-  if (cache) return cache;
+  if (useCache && cache) return cache;
 
   const folders = fs.existsSync(CONTENT_DIR)
     ? fs

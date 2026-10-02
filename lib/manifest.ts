@@ -27,7 +27,8 @@ export type Manifest = { brands: Record<string, BrandAssets> };
 let cache: Manifest | null = null;
 
 export function getBrandAssets(slug: string): BrandAssets {
-  if (!cache) {
+  // Re-read in development: the dev script regenerates it whenever content changes.
+  if (!cache || process.env.NODE_ENV !== "production") {
     if (!fs.existsSync(MANIFEST_PATH)) {
       throw new Error(`Missing ${path.relative(process.cwd(), MANIFEST_PATH)}. Run \`pnpm assets\` first.`);
     }
