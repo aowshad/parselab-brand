@@ -15,13 +15,13 @@ export function useCopy() {
   };
 }
 
-/** Copies the current page URL; the label turns into "✓ Copied" for 1.5s. */
-export function CopyLinkButton({ className }: { className?: string }) {
+/** Copies the current page URL; the label turns into "✓ <doneLabel>" for 1.5s without changing width. */
+export function CopyLinkButton({ className, doneLabel = "Copied" }: { className?: string; doneLabel?: string }) {
   const copy = useCopy();
   const { state, run } = useFeedback();
   return (
     <button type="button" className={className} onClick={async () => (await copy(window.location.href, "link")) && run(false)}>
-      <FeedbackLabel state={state} doneLabel="Copied">
+      <FeedbackLabel state={state} doneLabel={doneLabel}>
         <Link2 aria-hidden className="size-4" />
         Copy link
       </FeedbackLabel>
