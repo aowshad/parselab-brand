@@ -11,7 +11,7 @@ export function PaletteSection({ palettes, files }: Pick<BrandView, "palettes"> 
       {palettes.map((palette, i) => (
         <div key={palette.name} className={i > 0 ? "mt-8" : ""}>
           <h3 className="font-semibold">{palette.name}</h3>
-          <ul className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
+          <ul className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
             {palette.colors.map((c, j) => (
               <ColorCard key={`${j}-${c.name}`} color={c} />
             ))}

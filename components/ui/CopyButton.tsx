@@ -6,9 +6,11 @@ import { useToast } from "./Toast";
 
 export function useCopy() {
   const toast = useToast();
-  return async (text: string, label = text) => {
+  /** Copies `text`, toasts "Copied <label>", and resolves to whether it worked. */
+  return async (text: string, label = text): Promise<boolean> => {
     const ok = await copyText(text);
     toast(ok ? `Copied ${label}` : "Couldn't copy. Your browser blocked clipboard access.", ok ? "success" : "error");
+    return ok;
   };
 }
 

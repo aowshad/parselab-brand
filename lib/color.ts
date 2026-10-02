@@ -1,52 +1,79 @@
-export type Rgb = { r: number; g: number; b: number };
-export type Hsl = { h: number; s: number; l: number };
+/**
+ * Color math shared by the palette UI, the asset pipeline and (later) the admin preview.
+ * RGB, HSL and text recommendations are always derived from hex, never stored.
+ */
+
+export type Rgb = [r: number, g: number, b: number];
+export type Hsl = [h: number, s: number, l: number];
 
 export function hexToRgb(hex: string): Rgb {
   const n = parseInt(hex.replace("#", ""), 16);
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-export function rgbToHsl({ r, g, b }: Rgb): Hsl {
+export function rgbToHsl(r: number, g: number, b: number): Hsl {
   const [rn, gn, bn] = [r / 255, g / 255, b / 255];
   const max = Math.max(rn, gn, bn);
   const min = Math.min(rn, gn, bn);
   const l = (max + min) / 2;
   const d = max - min;
-  if (d === 0) return { h: 0, s: 0, l: Math.round(l * 100) };
+  if (d === 0) return [0, 0, Math.round(l * 100)];
 
   const s = d / (1 - Math.abs(2 * l - 1));
-  const h =
-    max === rn ? ((gn - bn) / d + (gn < bn ? 6 : 0)) : max === gn ? (bn - rn) / d + 2 : (rn - gn) / d + 4;
-  return { h: Math.round(h * 60) % 360, s: Math.round(s * 100), l: Math.round(l * 100) };
+  const h = max === rn ? (gn - bn) / d + (gn < bn ? 6 : 0) : max === gn ? (bn - rn) / d + 2 : (rn - gn) / d + 4;
+  return [Math.round(h * 60) % 360, Math.round(s * 100), Math.round(l * 100)];
 }
 
-export const formatRgb = ({ r, g, b }: Rgb) => `rgb(${r}, ${g}, ${b})`;
-export const formatHsl = ({ h, s, l }: Hsl) => `hsl(${h}, ${s}%, ${l}%)`;
+export const formatRgb = ([r, g, b]: Rgb) => `rgb(${r}, ${g}, ${b})`;
+export const formatHsl = ([h, s, l]: Hsl) => `hsl(${h}, ${s}%, ${l}%)`;
 
-/** WCAG relative luminance. */
-export function luminance(hex: string): number {
-  const { r, g, b } = hexToRgb(hex);
+/** WCAG 2.x relative luminance. */
+export function luminance([r, g, b]: Rgb): number {
   const [lr, lg, lb] = [r, g, b].map((c) => {
     const v = c / 255;
     return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  }) as [number, number, number];
+  }) as Rgb;
   return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
 }
 
-export function contrastRatio(a: string, b: string): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+/** WCAG contrast ratio, (L1 + 0.05) / (L2 + 0.05) with L1 the lighter color. */
+export function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(hexToRgb(a)), luminance(hexToRgb(b))].sort((x, y) => y - x) as [number, number];
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** Whether black or white text reads better on `bg`. */
+export type TextRecommendation = {
+  color: "#FFFFFF" | "#0A0A0A";
+  label: "White" | "Black";
+  /** Worst-case ratio across every background, rounded down to 1 decimal so it never overstates. */
+  ratio: number;
+  rating: "AAA" | "AA" | "AA Large" | "Fail";
+};
+
+const TEXT = [
+  { color: "#FFFFFF", label: "White" },
+  { color: "#0A0A0A", label: "Black" },
+] as const;
+
+/** White or near-black text for one or more backgrounds (e.g. gradient stops): whichever has the best worst case. */
+export function bestTextOn(bgs: string[]): TextRecommendation {
+  const [best] = TEXT.map((t) => ({ ...t, worst: Math.min(...bgs.map((bg) => contrast(bg, t.color))) })).sort(
+    (a, b) => b.worst - a.worst,
+  ) as [{ color: "#FFFFFF" | "#0A0A0A"; label: "White" | "Black"; worst: number }];
+  const ratio = Math.floor(best.worst * 10) / 10;
+  const rating = best.worst >= 7 ? "AAA" : best.worst >= 4.5 ? "AA" : best.worst >= 3 ? "AA Large" : "Fail";
+  return { color: best.color, label: best.label, ratio, rating };
+}
+
+/** Whether white text reads better than black on `bg`: used to style UI drawn over a stage or dot. */
 export function isDark(bg: string): boolean {
-  return contrastRatio(bg, "#FFFFFF") > contrastRatio(bg, "#000000");
+  return contrast(bg, "#FFFFFF") > contrast(bg, "#000000");
 }
 
 /** All derived values for one color, as shown in the UI and written to colors.json. */
 export function describeColor(hex: string) {
   const rgb = hexToRgb(hex);
-  return { hex: hex.toUpperCase(), rgb: formatRgb(rgb), hsl: formatHsl(rgbToHsl(rgb)) };
+  return { hex: hex.toUpperCase(), rgb: formatRgb(rgb), hsl: formatHsl(rgbToHsl(...rgb)) };
 }
 
 export type GradientStop = { hex: string; at: number };

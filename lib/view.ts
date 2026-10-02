@@ -1,4 +1,4 @@
-import { contrastRatio, describeColor, gradientCss, isDark } from "./color";
+import { bestTextOn, describeColor, gradientCss, isDark, type TextRecommendation } from "./color";
 import { getAllBrands, getBrand } from "./content";
 import { getBrandAssets, getManifest, type FileRef, type VariantAssets } from "./manifest";
 import type { Brand, BrandColor, LogoGroup, LogoVariant } from "./schema";
@@ -6,18 +6,27 @@ import type { Brand, BrandColor, LogoGroup, LogoVariant } from "./schema";
 export type VariantView = LogoVariant & { dot: string; assets: VariantAssets; darkStage: boolean };
 export type LogoGroupView = Omit<LogoGroup, "variants"> & { zip: FileRef; variants: VariantView[] };
 
+export type ColorRow = {
+  label: string;
+  value: string;
+  /** Screen-reader name for the row's copy button, e.g. "Copy RGB rgb(108, 169, 243)". */
+  action: string;
+  /** Toast reads "Copied <toastLabel>"; defaults to the value. */
+  toastLabel?: string;
+  /** Small swatch before the value, for gradient stops. */
+  dot?: string;
+};
+
 export type ColorView = {
   name: string;
   role: string;
-  /** CSS background for the swatch: a hex or a gradient. */
+  /** CSS background for the swatch: a hex or a gradient. No text is ever drawn on it. */
   swatch: string;
-  /** What clicking the swatch copies, and how the toast names it. */
-  copy: { value: string; label: string };
-  /** Label/value rows shown on the card, in order. Each row copies its value. */
-  values: { label: string; value: string }[];
-  darkSwatch: boolean;
-  /** Needs a hairline so it doesn't disappear against the white card. */
-  faint: boolean;
+  /** What clicking the swatch copies. */
+  copy: { value: string; action: string; chip: "Copy hex" | "Copy CSS"; toastLabel: string };
+  rows: ColorRow[];
+  /** Recommended text color on this color, computed from its hex (worst case across gradient stops). */
+  text: TextRecommendation & { sample: string; worstCase: boolean };
 };
 export type PaletteView = { name: string; colors: ColorView[] };
 
@@ -32,12 +41,6 @@ export type BrandView = Omit<Brand, "logoGroups" | "palettes"> & {
   counts: { variants: number; colors: number };
 };
 
-/** Pick black or white text by the worst contrast across every color it sits on. */
-function darkText(colors: string[]): boolean {
-  const worst = (text: string) => Math.min(...colors.map((c) => contrastRatio(c, text)));
-  return worst("#FFFFFF") > worst("#000000");
-}
-
 function colorView(c: BrandColor): ColorView {
   if ("gradient" in c) {
     const { angle, stops } = c.gradient;
@@ -46,28 +49,32 @@ function colorView(c: BrandColor): ColorView {
       name: c.name,
       role: c.role,
       swatch: css,
-      copy: { value: css, label: `${c.name} gradient CSS` },
-      values: [...stops.map((s) => ({ label: `${s.at}%`, value: s.hex.toUpperCase() })), { label: "CSS", value: css }],
-      darkSwatch: darkText(stops.map((s) => s.hex)),
-      faint: false,
+      copy: { value: css, action: `Copy CSS for ${c.name}`, chip: "Copy CSS", toastLabel: `CSS for ${c.name}` },
+      rows: [
+        ...stops.map((s) => {
+          const hex = s.hex.toUpperCase();
+          return { label: `${s.at}%`, value: hex, dot: hex, action: `Copy ${s.at}% stop ${hex}` };
+        }),
+        { label: "CSS", value: css, action: `Copy CSS for ${c.name}`, toastLabel: `CSS for ${c.name}` },
+      ],
+      text: { ...bestTextOn(stops.map((s) => s.hex)), sample: css, worstCase: true },
     };
   }
   const d = describeColor(c.hex);
-  const values = [
-    { label: "HEX", value: d.hex },
-    { label: "RGB", value: d.rgb },
-    { label: "HSL", value: d.hsl },
+  const rows: ColorRow[] = [
+    { label: "HEX", value: d.hex, action: `Copy hex ${d.hex}` },
+    { label: "RGB", value: d.rgb, action: `Copy RGB ${d.rgb}` },
+    { label: "HSL", value: d.hsl, action: `Copy HSL ${d.hsl}` },
   ];
-  if (c.cmyk) values.push({ label: "CMYK", value: c.cmyk });
-  if (c.pantone) values.push({ label: "Pantone", value: c.pantone });
+  if (c.cmyk) rows.push({ label: "CMYK", value: c.cmyk, action: `Copy CMYK ${c.cmyk}` });
+  if (c.pantone) rows.push({ label: "Pantone", value: c.pantone, action: `Copy Pantone ${c.pantone}` });
   return {
     name: c.name,
     role: c.role,
     swatch: d.hex,
-    copy: { value: d.hex, label: d.hex },
-    values,
-    darkSwatch: isDark(c.hex),
-    faint: contrastRatio(c.hex, "#FFFFFF") < 1.15,
+    copy: { value: d.hex, action: `Copy hex ${d.hex}`, chip: "Copy hex", toastLabel: d.hex },
+    rows,
+    text: { ...bestTextOn([d.hex]), sample: d.hex, worstCase: false },
   };
 }
 

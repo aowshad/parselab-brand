@@ -99,7 +99,7 @@ function paletteFiles(brand: Brand) {
           css: gradientCss(angle, stops),
           angle,
           stops: stops.map((s) => ({ at: s.at, ...describeColor(s.hex) })),
-          cssVar: uniqueVar(`--${brand.slug}-gradient-${kebab(c.name)}`, palette.name),
+          cssVar: uniqueVar(`--${brand.slug}-${kebab(c.name)}`, palette.name),
         };
       }
       return {

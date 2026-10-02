@@ -39,9 +39,9 @@
   ],
   "palettes": [
     {
-      "name": "Main Palette",
+      "name": "Main palette",
       "colors": [
-        { "name": "Violet", "role": "Brand gradient", "gradient": { "angle": 135, "stops": [{ "hex": "#F197FE", "at": 0 }, { "hex": "#8838E0", "at": 60 }, { "hex": "#5F12D4", "at": 100 }] } },
+        { "name": "Violet gradient", "role": "Brand gradient", "gradient": { "angle": 135, "stops": [{ "hex": "#F197FE", "at": 0 }, { "hex": "#8838E0", "at": 60 }, { "hex": "#5F12D4", "at": 100 }] } },
         { "name": "Indigo", "role": "Ink", "hex": "#07004F" },
         { "name": "Violet", "role": "Accent", "hex": "#8838E0" },
         { "name": "Lavender", "role": "Background", "hex": "#F6F0FF" },
