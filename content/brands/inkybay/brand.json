@@ -1,8 +1,8 @@
 {
   "slug": "inkybay",
   "name": "InkyBay",
-  "description": "Brand assets coming soon.",
-  "status": "soon",
+  "description": "Product customizer for Shopify.",
+  "status": "live",
   "order": 2,
   "updatedAt": "2026-10-02",
   "contact": "brand@parselab.com",
