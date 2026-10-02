@@ -9,8 +9,8 @@ export function PaletteSection({ palettes, files }: Pick<BrandView, "palettes"> 
   return (
     <>
       {palettes.map((palette, i) => (
-        <div key={palette.name} className={i > 0 ? "mt-8" : ""}>
-          <h3 className="font-semibold">{palette.name}</h3>
+        <div key={palette.name} className={i > 0 ? "mt-12" : ""}>
+          <h3 className="text-h3">{palette.name}</h3>
           <ul className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
             {palette.colors.map((c, j) => (
               <ColorCard key={`${j}-${c.name}`} color={c} />
@@ -20,13 +20,13 @@ export function PaletteSection({ palettes, files }: Pick<BrandView, "palettes"> 
       ))}
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="mr-1 text-sm text-muted">Download palette</span>
-        <DownloadLink file={files.css} className={buttonClass({ variant: "ghost", size: "sm" })}>
-          <Download aria-hidden className="size-3.5" />
+        <span className="mr-1 text-small text-muted">Download palette</span>
+        <DownloadLink file={files.css} feedback className={buttonClass({ variant: "ghost", size: "sm" })}>
+          <Download aria-hidden className="size-4" />
           <span className="tabular-nums">colors.css</span>
         </DownloadLink>
-        <DownloadLink file={files.json} className={buttonClass({ variant: "ghost", size: "sm" })}>
-          <Download aria-hidden className="size-3.5" />
+        <DownloadLink file={files.json} feedback className={buttonClass({ variant: "ghost", size: "sm" })}>
+          <Download aria-hidden className="size-4" />
           <span className="tabular-nums">colors.json</span>
         </DownloadLink>
       </div>

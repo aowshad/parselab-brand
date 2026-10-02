@@ -21,7 +21,7 @@ export function VariantTabs({
   const current = variants.find((v) => v.id === active);
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+    <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
       <SegmentedTabs
         label={`${label} variants`}
         controls={VARIANT_PANEL_ID}
@@ -29,7 +29,7 @@ export function VariantTabs({
         active={active}
         onSelect={onSelect}
       />
-      {current && <span className="ml-auto tabular-nums text-xs text-muted">{current.assets.svg.filename}</span>}
+      {current && <span className="ml-auto text-caption tabular-nums text-muted">{current.assets.svg.filename}</span>}
     </div>
   );
 }

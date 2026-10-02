@@ -12,12 +12,12 @@
   --color-ink: #0b0d12;
   --color-ink-soft: #16181f;
   --color-muted: #5b616e; /* 5.95:1 on ground, 5.5:1 on hover; keep >= 4.5:1 */
-  --color-hairline: #ecedf0;
+  --color-hairline: #ecedf0; /* --border */
   --color-control: #e4e6ea;
-  --color-hover: #f0f1f3;
+  --color-strong: #d5d8de; /* --border-strong */
+  --color-hover: #f0f1f3; /* --surface-hover */
   --color-track: #eeeff2;
   --color-success: #22c55e;
-  --color-focus: #2b5cff;
   --color-checker: #e6e7eb;
   --color-checker-dark: #22252d;
   --color-danger: #f87171; /* on ink */
@@ -30,24 +30,49 @@
   --radius-segment-item: 8px;
   --radius-stage: 20px;
 
-  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* Type scale: text-display / text-h2 / text-h3 / text-body / text-small / text-caption. */
+  --text-display: 40px;
+  --text-display--line-height: 44px;
+  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.025em;
+  --text-h2: 22px;
+  --text-h2--line-height: 28px;
+  --text-h2--font-weight: 600;
+  --text-h2--letter-spacing: -0.015em;
+  --text-h3: 16px;
+  --text-h3--line-height: 24px;
+  --text-h3--font-weight: 600;
+  --text-h3--letter-spacing: -0.01em;
+  --text-body: 15px;
+  --text-body--line-height: 24px;
+  --text-small: 13px;
+  --text-small--line-height: 20px;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caption--font-weight: 500;
+
+  /* Motion: ease-out for most things, ease-in-out for things that travel. */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
   --shadow-pill: 0 1px 2px rgb(11 13 18 / 0.08), 0 1px 1px rgb(11 13 18 / 0.04);
   --shadow-menu: 0 12px 32px -8px rgb(11 13 18 / 0.22), 0 2px 6px rgb(11 13 18 / 0.08);
   --shadow-toast: 0 10px 30px -6px rgb(11 13 18 / 0.35);
+  --shadow-lift: 0 8px 24px -12px rgb(0 0 0 / 0.15);
 
-  --animate-menu-in: menu-in 160ms var(--ease-out-soft);
-  --animate-toast-in: toast-in 250ms var(--ease-out-soft);
-  --animate-fade-in: fade-in 250ms var(--ease-out-soft);
+  --animate-menu-in: menu-in var(--dur-base) var(--ease-out);
+  --animate-toast-in: toast-in var(--dur-slow) var(--ease-out);
+  --animate-shimmer: shimmer 1.4s var(--ease-in-out) infinite;
 
   @keyframes menu-in {
-    from { opacity: 0; transform: translateY(4px) scale(0.97); }
+    from { opacity: 0; transform: translateY(4px); }
   }
   @keyframes toast-in {
     from { opacity: 0; transform: translateY(8px); }
   }
-  @keyframes fade-in {
-    from { opacity: 0; }
+  @keyframes shimmer {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
   }
 }
 
@@ -62,22 +87,17 @@
 }
 
 :root {
-  --duration-fast: 150ms;
-  --duration-base: 250ms;
-  --duration-slow: 350ms;
-  --duration-stage: 400ms;
+  --dur-fast: 120ms; /* color, background, border on hover */
+  --dur-base: 180ms; /* transform, shadow, icon swaps */
+  --dur-slow: 260ms; /* toasts, canvas background, section reveal */
+  --dur-press: 80ms; /* button :active */
 
-  --topbar-height: 64px;
-  --sidebar-width: 248px;
+  --container: 1200px;
+  --topbar-height: 56px;
 }
 
 @layer base {
   html {
-    scroll-padding-top: calc(var(--topbar-height) + 24px);
-    /* Below 900px the TOC chip row (49px) is also sticky under the navbar. */
-    @media (width < 900px) {
-      scroll-padding-top: calc(var(--topbar-height) + 49px + 16px);
-    }
     -webkit-text-size-adjust: 100%;
   }
 
@@ -85,6 +105,8 @@
     background: var(--color-ground);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -100,9 +122,108 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-focus);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
+
+  /* Anchor targets land just below the sticky navbar (and the TOC chip row on narrow screens). */
+  main section[id] {
+    scroll-margin-top: 80px;
+    @media (width < 900px) {
+      scroll-margin-top: 120px;
+    }
+  }
+}
+
+/* The one page container: navbar, content and footer all line up on it. */
+@utility container-page {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: 24px;
+  @media (width < 640px) {
+    padding-inline: 16px;
+  }
+}
+
+/* Named transitions. Only opacity, transform, color, background, border and shadow move. */
+@utility motion-colors {
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+@utility motion-press {
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    scale var(--dur-press) var(--ease-out);
+  &:active {
+    scale: 0.98;
+  }
+}
+@utility motion-card {
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    translate var(--dur-base) var(--ease-out);
+}
+@utility motion-nudge {
+  transition:
+    translate var(--dur-base) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+@utility motion-slide {
+  transition: translate var(--dur-base) var(--ease-in-out);
+}
+@utility motion-fade {
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+@utility motion-fade-slow {
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+@utility motion-bg-slow {
+  transition:
+    background-color var(--dur-slow) var(--ease-out),
+    border-color var(--dur-slow) var(--ease-out);
+}
+@utility motion-border {
+  transition: border-color var(--dur-base) var(--ease-out);
+}
+
+/* Faint dot grid for brands that have no logo yet. */
+@utility dot-grid {
+  background-color: var(--color-track);
+  background-image: radial-gradient(rgb(11 13 18 / 0.04) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+/* Loading skeleton: a soft highlight sweeping across, shown until an image has loaded. */
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-track);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
+    animation: var(--animate-shimmer);
+  }
+}
+
+/* Section reveal, applied by RevealOnScroll only to sections below the fold, once. */
+[data-reveal="pending"] {
+  opacity: 0;
+  translate: 0 8px;
+}
+[data-reveal="done"] {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    translate var(--dur-slow) var(--ease-out);
 }
 
 /* Transparency checkerboard for the logo stage. The dark tone keeps white logos visible. */
@@ -129,12 +250,14 @@
   }
 }
 
+/* Native smooth scrolling only; no scroll library. */
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
   }
 }
 
+/* Motion off: every state change becomes instant, and nothing waits to appear. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -143,5 +266,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  [data-reveal="pending"] {
+    opacity: 1;
+    translate: 0 0;
   }
 }

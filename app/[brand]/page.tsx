@@ -9,7 +9,9 @@ import { Footer } from "@/components/shell/Footer";
 import { TocChips, TocSidebar, type TocItem } from "@/components/shell/Toc";
 import { BrandTopBar } from "@/components/shell/TopBar";
 import { getAllBrands } from "@/lib/content";
+import { withBase } from "@/lib/paths";
 import { getBrandView } from "@/lib/view";
+import { RevealOnScroll } from "@/components/shell/RevealOnScroll";
 
 // Every brand in content/brands gets a page; any other slug is a 404.
 export const dynamicParams = false;
@@ -22,7 +24,17 @@ type Props = { params: Promise<{ brand: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const brand = getBrandView((await params).brand);
-  return brand ? { title: brand.name, description: `${brand.name} logos, colors and brand guidelines.` } : {};
+  if (!brand) return {};
+  const description = `${brand.name} logos, colors and brand guidelines. ${brand.description}`;
+  const image = { url: withBase(brand.og.path), width: 1200, height: 630, alt: `${brand.name} logo` };
+  return {
+    title: brand.name,
+    description,
+    // The tab and link previews show this brand, not the platform.
+    icons: brand.icon ? { icon: withBase(brand.icon.src) } : undefined,
+    openGraph: { title: `${brand.name} — Brand assets`, description, url: withBase(`/${brand.slug}`), images: [image] },
+    twitter: { card: "summary_large_image", title: `${brand.name} — Brand assets`, description, images: [image.url] },
+  };
 }
 
 const LOGOS_SUBTITLE = "Every file in SVG and transparent PNG.";
@@ -46,16 +58,17 @@ export default async function BrandPage({ params }: Props) {
     <>
       <BrandTopBar brand={brand} />
       <TocChips items={toc} />
-      <div className="mx-auto flex max-w-[1440px]">
+      {/* One container: 200px table of contents + content, 56px apart. */}
+      <div className="container-page grid grid-cols-1 min-[900px]:grid-cols-[200px_minmax(0,1fr)] min-[900px]:gap-x-14">
         <TocSidebar items={toc} />
-        <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12">
-          <div className="mx-auto max-w-[1040px]">
+        <main className="min-w-0">
+          <div>
             <BrandHero brand={brand} />
 
             {brand.logoGroups.length ? (
               <LogoSection brandName={brand.name} groups={brand.logoGroups} />
             ) : (
-              <Section id="logos" title="Logos" subtitle={LOGOS_SUBTITLE}>
+              <Section id="logos" title="Logos" subtitle={LOGOS_SUBTITLE} first>
                 <ComingSoonCard icon={Images} text="Logo files will be published here." />
               </Section>
             )}
@@ -76,10 +89,11 @@ export default async function BrandPage({ params }: Props) {
               <ComingSoonCard icon={BookOpen} text="Clear space, minimum sizes and do's and don'ts will be published here." />
             </Section>
 
-            <Footer contact={brand.contact} />
           </div>
         </main>
       </div>
+      <Footer contact={brand.contact} />
+      <RevealOnScroll />
     </>
   );
 }

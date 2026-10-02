@@ -26,6 +26,16 @@ function useCopied() {
   return { copied, run };
 }
 
+/** ⧉ cross-fades to ✓ (--dur-base) while a copy is confirmed. */
+function CrossfadeIcon({ done }: { done: boolean }) {
+  return (
+    <span className="grid">
+      <Copy className={`motion-fade col-start-1 row-start-1 size-3.5 ${done ? "opacity-0" : "opacity-100"}`} />
+      <Check className={`motion-fade col-start-1 row-start-1 size-3.5 ${done ? "opacity-100" : "opacity-0"}`} />
+    </span>
+  );
+}
+
 /** One palette color: pure swatch, then role and name. No text is drawn on the color. */
 export function ColorCard({ color }: { color: ColorView }) {
   const { copied, run } = useCopied();
@@ -43,9 +53,9 @@ export function ColorCard({ color }: { color: ColorView }) {
           {/* Hover/focus only, so touch devices show nothing extra; a tap still copies and toasts. */}
           <span
             aria-hidden
-            className={`absolute bottom-2.5 right-2.5 inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 tabular-nums text-xs opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 ${frosted}`}
+            className={`motion-fade absolute bottom-3 right-3 inline-flex h-7 items-center gap-2 rounded-full px-3 tabular-nums text-caption opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 ${frosted}`}
           >
-            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            <CrossfadeIcon done={copied !== null} />
             {copied ? <span className="font-medium">Copied</span> : color.hex}
           </span>
         </button>
@@ -53,16 +63,16 @@ export function ColorCard({ color }: { color: ColorView }) {
         <div aria-hidden style={{ background: color.css }} className={`h-24 w-full shrink-0 rounded-t-[15px] sm:h-28 ${hairline}`} />
       )}
 
-      <div className="flex flex-1 flex-col px-4 pb-4 pt-3.5">
-        <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted">{color.role}</p>
-        <div className="mt-0.5 flex items-baseline justify-between gap-3">
-          <p className="text-base font-semibold tracking-[-0.01em]">{color.name}</p>
+      <div className="flex flex-1 flex-col p-4">
+        <p className="text-caption uppercase tracking-[0.06em] text-muted">{color.role}</p>
+        <div className="mt-1 flex items-baseline justify-between gap-3">
+          <p className="text-h3">{color.name}</p>
           {color.kind === "solid" && (
             <button
               type="button"
               onClick={() => run(color.hex)}
               aria-label={`Copy hex ${color.hex}`}
-              className={`shrink-0 rounded-[6px] tabular-nums text-[13px] text-muted transition-colors duration-150 hover:text-ink ${focusRing}`}
+              className={`motion-colors shrink-0 rounded-[6px] tabular-nums text-small text-muted hover:text-ink ${focusRing}`}
             >
               {color.hex}
             </button>
@@ -83,7 +93,7 @@ export function ColorCard({ color }: { color: ColorView }) {
                   <span
                     aria-hidden
                     // Dark and below the chip: a frosted tooltip would vanish on the white card, and above it would cover the name.
-                    className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-ink px-2 py-1 tabular-nums text-[11px] text-on-dark opacity-0 shadow-pill transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    className="motion-fade pointer-events-none absolute left-1/2 top-full z-10 mt-2 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-ink px-2 py-1 tabular-nums text-caption text-on-dark opacity-0 shadow-pill group-hover:opacity-100 group-focus-visible:opacity-100"
                   >
                     {copied === hex ? (
                       <>

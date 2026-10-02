@@ -65,30 +65,49 @@ function useActiveSection(ids: string[]): string | undefined {
 }
 
 const Badge = ({ item }: { item: TocItem }) =>
-  item.soon ? <Chip className="ml-auto">Soon</Chip> : item.count !== undefined ? <span className="ml-auto tabular-nums text-xs">{item.count}</span> : null;
+  item.soon ? (
+    <Chip className="ml-auto">Soon</Chip>
+  ) : item.count !== undefined ? (
+    <span className="ml-auto text-caption tabular-nums text-muted">{item.count}</span>
+  ) : null;
 
-/** Desktop: sticky "On this page" list. Hidden below 900px, where TocChips takes over. */
+/**
+ * Desktop: sticky "On this page" list. One highlight slides between rows (translateY) as the
+ * scroll-spy moves; the rows themselves don't animate. Hidden below 900px, where TocChips takes over.
+ */
 export function TocSidebar({ items }: { items: TocItem[] }) {
   const active = useActiveSection(items.map((i) => i.id));
+  const index = Math.max(0, items.findIndex((i) => i.id === active));
+  const ROW = 32;
+  const GAP = 4;
+
   return (
-    <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-[248px] shrink-0 overflow-y-auto px-4 py-8 min-[900px]:block">
+    <aside className="sticky top-20 hidden self-start pt-12 min-[900px]:block">
       <nav aria-label="On this page">
-        <h2 className="px-2.5 text-xs font-medium text-muted">On this page</h2>
-        <ul className="mt-2 space-y-0.5">
-          {items.map((item) => (
-            <li key={item.id}>
-              <a
-                href={`#${item.id}`}
-                aria-current={item.id === active ? "location" : undefined}
-                className={`flex h-9 items-center gap-2.5 rounded-button-sm px-2.5 text-sm transition-colors duration-150 ease-out-soft ${
-                  item.id === active ? "bg-hover font-medium text-ink" : "text-muted hover:bg-hover hover:text-ink"
-                }`}
-              >
-                {item.label}
-                <Badge item={item} />
-              </a>
-            </li>
-          ))}
+        <h2 className="px-2 text-caption text-muted">On this page</h2>
+        <ul className="relative mt-2 flex flex-col gap-1">
+          <li
+            aria-hidden
+            style={{ translate: `0 ${index * (ROW + GAP)}px`, opacity: active ? 1 : 0 }}
+            className="motion-slide pointer-events-none absolute inset-x-0 top-0 h-8 rounded-[6px] bg-hover"
+          />
+          {items.map((item) => {
+            const isActive = item.id === active;
+            return (
+              <li key={item.id} className="relative">
+                <a
+                  href={`#${item.id}`}
+                  aria-current={isActive ? "location" : undefined}
+                  className={`motion-colors flex h-8 items-center gap-2 rounded-[6px] px-2 text-small ${
+                    isActive ? "font-medium text-ink" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {item.label}
+                  <Badge item={item} />
+                </a>
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </aside>
@@ -108,9 +127,9 @@ export function TocChips({ items }: { items: TocItem[] }) {
   return (
     <nav
       aria-label="On this page"
-      className="sticky top-16 z-30 border-b border-hairline bg-ground/85 backdrop-blur-md min-[900px]:hidden"
+      className="sticky top-14 z-30 border-b border-hairline bg-ground/85 backdrop-blur-[12px] min-[900px]:hidden"
     >
-      <ul className="flex gap-2 overflow-x-auto px-4 py-2.5 scrollbar-none">
+      <ul className="container-page flex gap-2 overflow-x-auto py-2 scrollbar-none">
         {items.map((item) => (
           <li key={item.id} className="shrink-0">
             <a
@@ -119,7 +138,7 @@ export function TocChips({ items }: { items: TocItem[] }) {
               }}
               href={`#${item.id}`}
               aria-current={item.id === active ? "location" : undefined}
-              className={`flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] font-medium transition-colors duration-150 ease-out-soft ${
+              className={`motion-colors flex h-8 items-center gap-2 rounded-full border px-3 text-small font-medium ${
                 item.id === active
                   ? "border-ink bg-ink text-on-dark"
                   : "border-control bg-surface text-muted hover:text-ink"
@@ -128,7 +147,7 @@ export function TocChips({ items }: { items: TocItem[] }) {
               {item.label}
               {/* Full-strength muted text: 11px needs 4.5:1, so no opacity tricks here. */}
               {(item.soon || item.count !== undefined) && (
-                <span className={`text-[11px] font-normal ${item.soon ? "" : "tabular-nums"} ${item.id === active ? "text-on-dark/75" : "text-muted"}`}>
+                <span className={`text-caption font-normal tabular-nums ${item.id === active ? "text-on-dark/75" : "text-muted"}`}>
                   {item.soon ? "Soon" : item.count}
                 </span>
               )}

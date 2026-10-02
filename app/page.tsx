@@ -8,22 +8,20 @@ export default function Home() {
   return (
     <>
       <HomeTopBar all={getAllKits()} />
-      <main className="mx-auto max-w-[1120px] px-4 sm:px-8">
-        <header className="pt-12 sm:pt-16">
-          <p className="text-[13px] font-medium text-muted">Brand assets</p>
-          <h1 className="mt-2 max-w-2xl text-3xl font-semibold tracking-[-0.025em] sm:text-4xl">
-            Logos, colors and guidelines for every ParseLab product.
-          </h1>
+      <main className="container-page">
+        <header className="pt-24">
+          <h1 className="text-display text-balance">Brand assets</h1>
+          <p className="mt-3 max-w-[560px] text-body text-pretty text-muted">Logos, colors and guidelines for every ParseLab product.</p>
         </header>
-        <ul className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {getBrandCards().map((b) => (
             <li key={b.slug} className="flex">
               <BrandCard brand={b} />
             </li>
           ))}
         </ul>
-        <Footer contact={SITE.contact} />
       </main>
+      <Footer contact={SITE.contact} />
     </>
   );
 }

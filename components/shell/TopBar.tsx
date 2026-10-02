@@ -1,63 +1,67 @@
-import { ArrowLeft, Download } from "lucide-react";
+import { Download } from "lucide-react";
+import { formatSize } from "@/lib/format";
 import type { FileRef } from "@/lib/manifest";
 import { withBase } from "@/lib/paths";
 import type { BrandView } from "@/lib/view";
-import { BrandIcon } from "../brand/BrandIcon";
 import { buttonClass } from "../ui/Button";
 import { DownloadLink } from "../ui/DownloadLink";
+import { StickyBar } from "./StickyBar";
 
-function Bar({ children }: { children: React.ReactNode }) {
-  return (
-    <header className="sticky top-0 z-40 h-16 border-b border-hairline bg-ground/80 backdrop-blur-md backdrop-saturate-150">
-      <div className="mx-auto flex h-full max-w-[1440px] items-center gap-3 px-4 sm:px-6">{children}</div>
-    </header>
-  );
-}
+const SITE_NAME = "ParseLab Brand";
 
+/** The page's one download CTA, with its size in a lighter tone. */
 function KitButton({ file, label, compact = false }: { file: FileRef; label: string; compact?: boolean }) {
   return (
-    <DownloadLink file={file} className={buttonClass({ variant: "primary", size: "sm", className: "ml-auto" })}>
+    <DownloadLink
+      file={file}
+      feedback
+      // Icon-only on phones, so the status label must not reserve width there either.
+      doneLabel={compact ? <span className="max-sm:hidden">Downloaded</span> : "Downloaded"}
+      aria-label={`${label}, ${formatSize(file.sizeKb)}`}
+      className={buttonClass({ variant: "primary", size: "sm", className: "ml-auto" })}
+    >
       <Download aria-hidden className="size-4" />
-      {/* `compact`: icon-only on phones, label kept for screen readers. */}
-      <span className={compact ? "max-sm:sr-only" : ""}>{label}</span>
+      {/* `compact`: icon-only on phones. */}
+      <span className={`tabular-nums ${compact ? "max-sm:hidden" : ""}`}>
+        {label}
+        <span className="text-on-dark/60"> · {formatSize(file.sizeKb)}</span>
+      </span>
     </DownloadLink>
   );
 }
 
-/** Home: platform wordmark and, when any kit exists, "Download all". */
+/** Home: the platform name as text, and "Download all" when any kit exists. */
 export function HomeTopBar({ all }: { all: FileRef | null }) {
   return (
-    <Bar>
-      <a href={withBase("/")} className="flex items-center gap-2.5 rounded-button-sm text-[15px] tracking-tight">
-        <span aria-hidden className="grid size-7 place-items-center rounded-[8px] bg-ink text-[13px] font-semibold text-on-dark">
-          P
-        </span>
-        <span>
-          ParseLab <span className="font-semibold">Brand Assets</span>
-        </span>
+    <StickyBar>
+      <a href={withBase("/")} className="motion-colors rounded-[6px] text-body font-semibold tracking-[-0.01em] hover:text-ink-soft">
+        {SITE_NAME}
       </a>
       {all && <KitButton file={all} label="Download all" />}
-    </Bar>
+    </StickyBar>
   );
 }
 
-/** Brand page: back to all brands, this brand, and its kit. Never references another brand. */
-export function BrandTopBar({ brand }: { brand: Pick<BrandView, "name" | "icon" | "kit"> }) {
+/** Brand page: a text breadcrumb back to all brands, and this brand's kit. Never names another brand. */
+export function BrandTopBar({ brand }: { brand: Pick<BrandView, "name" | "kit"> }) {
   return (
-    <Bar>
-      <a
-        href={withBase("/")}
-        className="flex shrink-0 items-center gap-1.5 rounded-button-sm text-sm text-muted transition-colors duration-150 hover:text-ink"
-      >
-        <ArrowLeft aria-hidden className="size-4" />
-        All brands
-      </a>
-      <span aria-hidden className="h-5 w-px shrink-0 bg-control" />
-      <span className="flex min-w-0 items-center gap-2 text-[15px] font-semibold tracking-tight">
-        <BrandIcon name={brand.name} icon={brand.icon} size={24} radius={6} />
-        <span className="truncate">{brand.name}</span>
-      </span>
+    <StickyBar>
+      <nav aria-label="Breadcrumb" className="min-w-0">
+        <ol className="flex min-w-0 items-center gap-2 text-body">
+          <li className="shrink-0">
+            <a href={withBase("/")} className="motion-colors rounded-[6px] text-muted hover:text-ink">
+              {SITE_NAME}
+            </a>
+          </li>
+          <li aria-hidden className="text-muted">
+            /
+          </li>
+          <li className="truncate font-semibold text-ink" aria-current="page">
+            {brand.name}
+          </li>
+        </ol>
+      </nav>
       {brand.kit && <KitButton file={brand.kit} label="Download kit" compact />}
-    </Bar>
+    </StickyBar>
   );
 }

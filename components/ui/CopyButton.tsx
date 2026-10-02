@@ -1,7 +1,8 @@
 "use client";
 
-import type { ButtonHTMLAttributes } from "react";
+import { Link2 } from "lucide-react";
 import { copyText } from "@/lib/clipboard";
+import { FeedbackLabel, useFeedback } from "./Feedback";
 import { useToast } from "./Toast";
 
 export function useCopy() {
@@ -14,8 +15,16 @@ export function useCopy() {
   };
 }
 
-/** Copies the current page URL. */
-export function CopyLinkButton(props: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "type">) {
+/** Copies the current page URL; the label turns into "✓ Copied" for 1.5s. */
+export function CopyLinkButton({ className }: { className?: string }) {
   const copy = useCopy();
-  return <button type="button" onClick={() => copy(window.location.href, "link")} {...props} />;
+  const { state, run } = useFeedback();
+  return (
+    <button type="button" className={className} onClick={async () => (await copy(window.location.href, "link")) && run(false)}>
+      <FeedbackLabel state={state} doneLabel="Copied">
+        <Link2 aria-hidden className="size-4" />
+        Copy link
+      </FeedbackLabel>
+    </button>
+  );
 }

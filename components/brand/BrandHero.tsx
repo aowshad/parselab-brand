@@ -1,55 +1,44 @@
-import { Download, Link2 } from "lucide-react";
-import { formatDate, formatSize } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import type { BrandView } from "@/lib/view";
 import { buttonClass } from "../ui/Button";
-import { BrandIcon } from "./BrandIcon";
 import { CopyLinkButton } from "../ui/CopyButton";
-import { DownloadLink } from "../ui/DownloadLink";
+import { BrandIcon } from "./BrandIcon";
 
+/** Compact hero: icon and name in one row, then description, Copy link and the meta line. */
 export function BrandHero({ brand }: { brand: BrandView }) {
   const { variants, colors } = brand.counts;
   // Only facts that apply: a brand with no logos yet just shows its update date.
   const meta = [
     ...(variants > 0 ? [`${variants} logo ${variants === 1 ? "variant" : "variants"}`] : []),
-    ...(colors > 0 ? [`${colors} brand ${colors === 1 ? "color" : "colors"}`] : []),
-    ...(variants > 0 ? ["SVG + PNG for every file"] : []),
+    ...(colors > 0 ? [`${colors} ${colors === 1 ? "color" : "colors"}`] : []),
+    ...(variants > 0 ? ["SVG + PNG"] : []),
     `Updated ${formatDate(brand.updatedAt)}`,
   ];
 
   return (
-    <header className="pt-10 sm:pt-14">
-      <BrandIcon name={brand.name} icon={brand.icon} size={76} radius={18} />
-      <p className="mt-6 text-[13px] font-medium text-muted">Brand assets & guidelines</p>
-      <h1 className="mt-1.5 text-4xl font-semibold tracking-[-0.025em] sm:text-5xl">{brand.name}</h1>
-      <p className="mt-3 max-w-xl text-base text-muted sm:text-lg">{brand.description}</p>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        <CopyLinkButton className={buttonClass({ variant: "ghost" })}>
-          <Link2 aria-hidden className="size-4" />
-          Copy link
-        </CopyLinkButton>
-        {brand.kit && (
-          <DownloadLink file={brand.kit} className={buttonClass({ variant: "primary" })}>
-            <Download aria-hidden className="size-4" />
-            Download brand kit
-            <span className="hidden tabular-nums text-xs text-on-dark/60 sm:inline">{formatSize(brand.kit.sizeKb)}</span>
-          </DownloadLink>
-        )}
+    <header className="pt-12">
+      <div className="flex items-center gap-4">
+        <BrandIcon name={brand.name} icon={brand.icon} size={48} radius={12} />
+        <h1 className="text-display text-balance">{brand.name}</h1>
       </div>
-
-      {/* Each "·" is glued to the item before it, so wrapped lines never start with one. */}
-      <p className="mt-6 text-[13px] leading-6 text-muted">
-        {meta.map((m, i) => (
-          <span key={m}>
-            <span className="whitespace-nowrap">
-              {m}
-              {i < meta.length - 1 && <span aria-hidden>{"\u00a0\u00a0·"}</span>}
+      <div className="sm:pl-16">
+        <p className="mt-3 max-w-[560px] text-body text-pretty text-muted">{brand.description}</p>
+        <div className="mt-4">
+          <CopyLinkButton className={buttonClass({ variant: "ghost", size: "sm" })} />
+        </div>
+        {/* Same spacing on both sides of every "·"; each dot sticks to the item before it. */}
+        <p className="mt-4 text-caption tabular-nums text-muted">
+          {meta.map((m, i) => (
+            <span key={m}>
+              <span className="whitespace-nowrap">
+                {m}
+                {i < meta.length - 1 && <span aria-hidden>{" ·"}</span>}
+              </span>
+              {i < meta.length - 1 && " "}
             </span>
-            {i < meta.length - 1 && " "}
-          </span>
-        ))}
-      </p>
+          ))}
+        </p>
+      </div>
     </header>
   );
 }
-

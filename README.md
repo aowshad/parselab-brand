@@ -16,6 +16,8 @@ pnpm build && npx serve out
 
 `pnpm dev` watches `content/` and regenerates assets when a `brand.json` or SVG changes; refresh the browser to see it.
 
+Set `SITE_URL=https://your-domain` when building for production, so link previews (Open Graph images) use absolute URLs. It defaults to `http://localhost:3000`.
+
 Set `BASE_PATH=/sub-path` when building for a host that serves the site from a sub-path (e.g. GitHub Pages project sites).
 
 ## Sharing and shortcuts
@@ -35,6 +37,7 @@ Set `BASE_PATH=/sub-path` when building for a host that serves the site from a s
 | Palette | `colors.css`, `colors.json` |
 | Brand kit (`svg/`, `png/<width>/`, colors) | `<slug>-brand-kit.zip` |
 | One zip per logo group | `<slug>-<groupKey>-logos.zip` |
+| 1200×630 link-preview image | `og.png` (plus `public/brands/og.png` for the home page) |
 
 Brands without logos get no kit, and their "Download kit" buttons are hidden. Every kit is also combined into `public/brands/parselab-brand-kits.zip` for "Download all" on the home page; that button is hidden when no brand has a kit.
 

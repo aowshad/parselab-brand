@@ -18,6 +18,8 @@ export type BrandAssets = {
   kit: FileRef | null;
   /** Null until the brand has at least one palette. */
   colors: { css: FileRef; json: FileRef } | null;
+  /** 1200×630 link-preview image. */
+  og: FileRef;
   /** Per logo group zip, keyed by group key. */
   groups: Record<string, FileRef>;
   /** Keyed by variant id. */
@@ -27,6 +29,8 @@ export type BrandAssets = {
 export type Manifest = {
   /** Every brand kit in one zip, for "Download all". Null when no brand has a kit. */
   all: FileRef | null;
+  /** Link-preview image for the home page. */
+  og: FileRef;
   brands: Record<string, BrandAssets>;
 };
 

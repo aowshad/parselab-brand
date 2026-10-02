@@ -20,6 +20,8 @@ export type BrandView = Omit<Brand, "logoGroups" | "palettes"> & {
   /** Null until the brand has logos: hide every "Download kit" button. */
   kit: FileRef | null;
   colorFiles: { css: FileRef; json: FileRef } | null;
+  /** 1200×630 link-preview image. */
+  og: FileRef;
   /** Small brand icon for the hero and navbar; null shows the brand's initial instead. */
   icon: { src: string; isTile: boolean } | null;
   counts: { variants: number; colors: number };
@@ -66,6 +68,7 @@ export function getBrandView(slug: string): BrandView | undefined {
     palettes: brand.palettes.map((p) => ({ name: p.name, colors: p.colors.map(colorView) })),
     kit: assets.kit,
     colorFiles: assets.colors,
+    og: assets.og,
     icon: iconVariant ? { src: iconVariant.assets.svg.path, isTile: Boolean(tile) } : null,
     counts: { variants: countVariants(brand), colors: countColors(brand) },
   };
@@ -81,9 +84,10 @@ export type BrandCardView = {
   counts: { variants: number; colors: number };
 };
 
-/** Home page cards, in brand order. */
+/** Home page cards: live brands first, then soon, each group in its saved order. */
 export function getBrandCards(): BrandCardView[] {
-  return getAllBrands().map((b) => {
+  const rank = (b: Brand) => (b.status === "live" ? 0 : 1);
+  return [...getAllBrands()].sort((a, b) => rank(a) - rank(b)).map((b) => {
     const logo = b.theme ? getBrandAssets(b.slug).variants[b.theme.cardLogo]?.svg.path ?? null : null;
     return {
       slug: b.slug,

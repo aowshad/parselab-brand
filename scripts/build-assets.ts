@@ -5,7 +5,8 @@
  *   3. write the palette            → public/brands/<slug>/colors.{css,json}
  *   4. zip the brand kit + each logo group (only for brands that have logos)
  *   5. zip every brand kit together  → public/brands/parselab-brand-kits.zip ("Download all")
- *   6. write .generated/manifest.json (paths + sizes) for the UI
+ *   6. render 1200×630 link previews → public/brands/<slug>/og.png and public/brands/og.png
+ *   7. write .generated/manifest.json (paths + sizes) for the UI
  * Unchanged sources are skipped using a hash cache in .cache/.
  */
 import crypto from "node:crypto";
@@ -25,6 +26,9 @@ const PIPELINE_VERSION = 1;
 const ROOT = process.cwd();
 const PUBLIC_BRANDS = path.join(ROOT, "public", "brands");
 const ALL_KITS = path.join(PUBLIC_BRANDS, "parselab-brand-kits.zip");
+const SITE_OG = path.join(PUBLIC_BRANDS, "og.png");
+const FONT_DIR = path.join(ROOT, "node_modules", "geist", "dist", "fonts", "geist-sans");
+const OG = { w: 1200, h: 630 };
 const CACHE_PATH = path.join(ROOT, ".cache", "build-assets.json");
 
 type Cache = { version: number; entries: Record<string, string> };
@@ -158,6 +162,40 @@ function prune(dir: string, keep: Set<string>) {
   }
 }
 
+const escapeXml = (t: string) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+/** Rasterize a 1200×630 SVG with the bundled Geist files, so text never depends on system fonts. */
+function renderOgPng(svg: string): Buffer {
+  return new Resvg(svg, {
+    fitTo: { mode: "width", value: OG.w },
+    font: {
+      loadSystemFonts: false,
+      fontFiles: [path.join(FONT_DIR, "Geist-Regular.ttf"), path.join(FONT_DIR, "Geist-SemiBold.ttf")],
+      defaultFontFamily: "Geist",
+    },
+  })
+    .render()
+    .asPng();
+}
+
+/** Brand preview: its card logo on that variant's background, or its name when it has no logo yet. */
+function brandOgSvg(brand: Brand, logoSvg: string | null, background: string): string {
+  const body = logoSvg
+    ? // The logo scales into a centered box, 60% × 40% of the image.
+      `<image x="${OG.w * 0.2}" y="${OG.h * 0.3}" width="${OG.w * 0.6}" height="${OG.h * 0.4}" preserveAspectRatio="xMidYMid meet" href="data:image/svg+xml;base64,${Buffer.from(logoSvg).toString("base64")}"/>`
+    : `<text x="${OG.w / 2}" y="${OG.h / 2 + 32}" text-anchor="middle" font-family="Geist" font-weight="600" font-size="96" letter-spacing="-2.4" fill="#0B0D12" fill-opacity="0.4">${escapeXml(brand.name)}</text>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${OG.w}" height="${OG.h}" viewBox="0 0 ${OG.w} ${OG.h}"><rect width="100%" height="100%" fill="${background}"/>${body}</svg>`;
+}
+
+function siteOgSvg(): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${OG.w}" height="${OG.h}" viewBox="0 0 ${OG.w} ${OG.h}">
+<rect width="100%" height="100%" fill="#FAFAFA"/>
+<text x="96" y="300" font-family="Geist" font-weight="600" font-size="88" letter-spacing="-2.2" fill="#0B0D12">Brand assets</text>
+<text x="96" y="372" font-family="Geist" font-size="36" fill="#5B616E">Logos, colors and guidelines for every ParseLab product.</text>
+<text x="96" y="534" font-family="Geist" font-weight="600" font-size="30" fill="#0B0D12">ParseLab Brand</text>
+</svg>`;
+}
+
 async function buildBrand(brand: Brand, cache: Cache, stats: { rendered: number; skipped: number }): Promise<BrandAssets> {
   const out = path.join(PUBLIC_BRANDS, brand.slug);
   const svgDir = path.join(out, "logos", "svg");
@@ -166,7 +204,7 @@ async function buildBrand(brand: Brand, cache: Cache, stats: { rendered: number;
   fs.mkdirSync(pngDir, { recursive: true });
 
   const keep = new Set<string>();
-  const assets: BrandAssets = { kit: null, colors: null, groups: {}, variants: {} };
+  const assets: BrandAssets = { kit: null, colors: null, og: null!, groups: {}, variants: {} };
   const sourceHashes: Record<string, string> = {};
 
   for (const group of brand.logoGroups) {
@@ -256,6 +294,14 @@ async function buildBrand(brand: Brand, cache: Cache, stats: { rendered: number;
     assets.kit = await buildZip(path.join(out, `${brand.slug}-brand-kit.zip`), allIds, colorEntries);
   }
 
+  // Link preview: the card logo (usually the full logo) on that variant's own background.
+  const cardVariant = brand.theme && brand.logoGroups.flatMap((g) => g.variants).find((v) => v.id === brand.theme!.cardLogo);
+  const ogOut = path.join(out, "og.png");
+  const logoSvg = cardVariant ? fs.readFileSync(path.join(svgDir, `${brand.slug}-${cardVariant.id}.svg`), "utf8") : null;
+  fs.writeFileSync(ogOut, renderOgPng(brandOgSvg(brand, logoSvg, cardVariant?.previewBg ?? "#EEEFF2")));
+  keep.add(ogOut);
+  assets.og = fileRef(ogOut);
+
   prune(out, keep);
   return assets;
 }
@@ -290,7 +336,7 @@ async function main() {
   const brands = getAllBrands();
   const cache = readCache();
   const stats = { rendered: 0, skipped: 0 };
-  const manifest: Manifest = { all: null, brands: {} };
+  const manifest: Manifest = { all: null, og: null!, brands: {} };
 
   for (const brand of brands) {
     manifest.brands[brand.slug] = await buildBrand(brand, cache, stats);
@@ -301,10 +347,14 @@ async function main() {
   manifest.all = await buildAllKits(brands, manifest, cache);
   if (manifest.all) console.log(`✓ all brand kits   ${manifest.all.sizeKb} KB`);
 
+  fs.writeFileSync(SITE_OG, renderOgPng(siteOgSvg()));
+  manifest.og = fileRef(SITE_OG);
+
   // Remove output for brands that were deleted, and the combined zip if no kits remain.
   if (fs.existsSync(PUBLIC_BRANDS)) {
     for (const name of fs.readdirSync(PUBLIC_BRANDS)) {
       const abs = path.join(PUBLIC_BRANDS, name);
+      if (abs === SITE_OG) continue;
       if (abs === ALL_KITS ? !manifest.all : !manifest.brands[name]) fs.rmSync(abs, { recursive: true, force: true });
     }
   }

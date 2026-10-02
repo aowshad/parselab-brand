@@ -77,15 +77,15 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
       id="logos"
       aria-labelledby="logos-heading"
       onKeyDown={onKeyDown}
-      className="mt-16 sm:mt-20"
+      className="mt-16"
     >
       {/* Same header layout as components/sections/Section, plus the ref and shortcut handler this section needs. */}
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div>
-          <h2 id="logos-heading" className="text-2xl font-semibold tracking-[-0.02em]">
+          <h2 id="logos-heading" className="text-h2 text-balance">
             Logos
           </h2>
-          <p className="mt-1 text-sm text-muted">Every file in SVG and transparent PNG.</p>
+          <p className="mt-1 text-small text-muted">Every file in SVG and transparent PNG.</p>
         </div>
         {groups.length > 1 && <LogoTypeTabs groups={groups} active={group.key} onSelect={selectGroup} />}
       </div>
@@ -95,7 +95,7 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
         id={TYPE_PANEL_ID}
         role={groups.length > 1 ? "tabpanel" : undefined}
         aria-labelledby={groups.length > 1 ? typeTabId(group.key) : undefined}
-        className="mt-8"
+        className="mt-6"
       >
         <div className="mb-4 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <Stack
@@ -105,15 +105,20 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
             className="min-w-0 grow basis-64"
             render={(g) => (
               <>
-                <h3 className="font-semibold">{g.label}</h3>
-                <p className="mt-0.5 text-sm text-muted">{g.description}</p>
+                <h3 className="text-h3">{g.label}</h3>
+                <p className="text-small text-pretty text-muted">{g.description}</p>
               </>
             )}
           />
-          <DownloadLink file={group.zip} className={buttonClass({ variant: "ghost", size: "sm" })}>
-            <Download aria-hidden className="size-3.5" />
-            All {group.label} files
-            <span className="tabular-nums text-xs text-muted">.zip · {formatSize(group.zip.sizeKb)}</span>
+          <DownloadLink
+            file={group.zip}
+            feedback
+            aria-label={`Download all ${group.label} files, ZIP, ${formatSize(group.zip.sizeKb)}`}
+            className={buttonClass({ variant: "ghost", size: "sm" })}
+          >
+            <Download aria-hidden className="size-4" />
+            Download all
+            <span className="tabular-nums text-muted">· ZIP · {formatSize(group.zip.sizeKb)}</span>
           </DownloadLink>
         </div>
 
@@ -141,8 +146,8 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
           isActive={(v) => v.id === variant.id}
           className="mt-3"
           render={(v) => (
-            <p className="flex gap-2 text-[13px] text-muted">
-              <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
+            <p className="flex gap-2 text-small text-pretty text-muted">
+              <Info aria-hidden className="mt-[2px] size-4 shrink-0" />
               <span>
                 <span className="sr-only">Usage: </span>
                 {v.usage}

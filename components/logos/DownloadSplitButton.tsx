@@ -102,10 +102,11 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
       <div className="flex rounded-button shadow-pill">
         <DownloadLink
           file={svg}
+          feedback
           data-primary-download
           aria-keyshortcuts="D"
           title="Download SVG (D)"
-          className={`inline-flex h-10 items-center gap-2 rounded-l-button pl-4 pr-3.5 text-sm font-medium transition-colors duration-150 ease-out-soft ${tone}`}
+          className={`motion-press inline-flex h-10 items-center gap-2 rounded-l-button pl-4 pr-3 text-small font-medium ${tone}`}
         >
           <Download aria-hidden className="size-4" />
           Download SVG
@@ -119,11 +120,11 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
           aria-controls={open ? menuId : undefined}
           onClick={() => (open ? close(false) : openMenu("first"))}
           onKeyDown={onTriggerKeyDown}
-          className={`grid h-10 w-10 place-items-center rounded-r-button border-l transition-colors duration-150 ease-out-soft ${tone} ${divider}`}
+          className={`motion-press grid h-10 w-10 place-items-center rounded-r-button border-l ${tone} ${divider}`}
         >
           <ChevronDown
             aria-hidden
-            className={`size-4 transition-transform duration-200 ease-out-soft ${open ? "rotate-180" : ""}`}
+            className={`size-4 transition-[rotate] duration-(--dur-base) ease-out ${open ? "rotate-180" : ""}`}
           />
         </button>
       </div>
@@ -134,12 +135,12 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
           role="menu"
           aria-label={`Download ${variant.name}`}
           onKeyDown={onMenuKeyDown}
-          className="absolute bottom-full right-0 z-20 mb-2 w-[min(17rem,calc(100vw-3rem))] origin-bottom-right animate-menu-in rounded-[12px] border border-hairline bg-surface p-1.5 text-ink shadow-menu"
+          className="absolute bottom-full right-0 z-20 mb-2 w-[min(17rem,calc(100vw-3rem))] origin-bottom-right animate-menu-in rounded-[12px] border border-hairline bg-surface p-2 text-ink shadow-menu"
         >
           {items.map((item, i) => (
             <div key={item.file.filename}>
               {i === 1 && (
-                <p aria-hidden className="mt-1 border-t border-hairline px-2.5 pb-1 pt-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+                <p aria-hidden className="mt-1 border-t border-hairline px-2 pb-1 pt-3 text-caption uppercase tracking-[0.06em] text-muted">
                   PNG · Transparent
                 </p>
               )}
@@ -152,11 +153,11 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
                 aria-label={item.a11y}
                 tabIndex={-1}
                 onClick={() => close(true)}
-                className="flex h-9 items-center gap-3 rounded-[8px] px-2.5 text-sm outline-none hover:bg-hover focus-visible:bg-hover focus-visible:outline-none"
+                className="motion-colors flex h-9 items-center gap-3 rounded-[8px] px-2 text-small outline-none hover:bg-hover focus-visible:bg-hover focus-visible:outline-none"
               >
                 <span className="font-medium tabular-nums">{item.label}</span>
-                <span className="text-xs text-muted tabular-nums">{item.detail}</span>
-                <span className="ml-auto tabular-nums text-xs text-muted">{formatSize(item.file.sizeKb)}</span>
+                <span className="text-caption text-muted tabular-nums">{item.detail}</span>
+                <span className="ml-auto text-caption tabular-nums text-muted">{formatSize(item.file.sizeKb)}</span>
               </DownloadLink>
             </div>
           ))}

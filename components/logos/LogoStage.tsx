@@ -1,15 +1,29 @@
 "use client";
 
 import { Grid2x2 } from "lucide-react";
+import { useCallback, useState } from "react";
 import { withBase } from "@/lib/paths";
 import type { VariantView } from "@/lib/view";
 import { DownloadSplitButton } from "./DownloadSplitButton";
 
-/** Box the logo is scaled into. Wide lockups get more width, compact marks more air. */
+/** Box the logo is scaled into: at most 56% of the canvas width, centered. */
 function logoBox(v: VariantView) {
   const wide = v.assets.svg.width / v.assets.svg.height >= 2;
-  const [x, y] = wide ? [20, 28] : [24, 24];
+  const [x, y] = wide ? [22, 28] : [22, 18];
   return { left: `${x}%`, top: `${y}%`, width: `${100 - 2 * x}%`, height: `${100 - 2 * y}%` };
+}
+
+/** Which logo files have finished loading. Also catches images that loaded before hydration. */
+function useLoaded() {
+  const [loaded, setLoaded] = useState<Set<string>>(() => new Set());
+  const mark = useCallback((id: string) => setLoaded((s) => (s.has(id) ? s : new Set(s).add(id))), []);
+  const refFor = useCallback(
+    (id: string) => (el: HTMLImageElement | null) => {
+      if (el?.complete && el.naturalWidth > 0) mark(id);
+    },
+    [mark],
+  );
+  return { loaded, mark, refFor };
 }
 
 export function LogoStage({
@@ -29,7 +43,8 @@ export function LogoStage({
 }) {
   // The checkerboard follows the variant's tone, so dark-stage logos stay dark-on-dark.
   const onDark = active.darkStage;
-  // Below 640px the controls sit in a toolbar under the stage (a 16:9 stage is too short to
+  const { loaded, mark, refFor } = useLoaded();
+  // Below 640px the controls sit in a toolbar under the stage (a 2:1 stage is too short to
   // overlay them without covering the logo), so the on-stage colors only apply from `sm` up.
   const chrome = onDark
     ? "sm:bg-on-dark/10 sm:text-on-dark sm:hover:bg-on-dark/20 sm:focus-visible:outline-on-dark sm:border-transparent"
@@ -37,21 +52,20 @@ export function LogoStage({
 
   return (
     <div className="relative">
-      <div className="relative aspect-video">
+      <div className="relative aspect-[2/1] max-h-[440px] w-full">
         <div
-          className={`absolute inset-0 overflow-hidden rounded-stage border transition-[border-color] duration-[400ms] ${
-            onDark ? "border-transparent" : "border-hairline"
-          }`}
+          className={`motion-bg-slow absolute inset-0 overflow-hidden rounded-stage border ${onDark ? "border-transparent" : "border-hairline"}`}
         >
+          <div className="motion-bg-slow absolute inset-0" style={{ backgroundColor: active.previewBg }} />
           <div
-            className="absolute inset-0 transition-[background-color] duration-[400ms] ease-out-soft"
-            style={{ backgroundColor: active.previewBg }}
-          />
-          <div
-            className={`absolute inset-0 checkerboard transition-opacity duration-300 ease-out-soft ${onDark ? "checkerboard-dark" : ""} ${
+            className={`motion-fade absolute inset-0 checkerboard ${onDark ? "checkerboard-dark" : ""} ${
               transparent ? "opacity-100" : "opacity-0"
             }`}
           />
+          {/* Skeleton until the active logo has loaded, so nothing pops in. */}
+          {!loaded.has(active.id) && (
+            <div aria-hidden className="skeleton absolute rounded-[12px] opacity-60" style={logoBox(active)} />
+          )}
           {/* All variants of the group stay mounted so switching is an instant crossfade. */}
           {variants.map((v) => {
             const isActive = v.id === active.id;
@@ -63,12 +77,14 @@ export function LogoStage({
                 aria-hidden={!isActive}
                 width={v.assets.svg.width}
                 height={v.assets.svg.height}
+                ref={refFor(v.id)}
+                onLoad={() => mark(v.id)}
                 decoding="async"
+                loading={isActive ? "eager" : "lazy"}
                 fetchPriority={isActive ? "high" : "low"}
                 draggable={false}
-                className={`absolute object-contain transition-opacity duration-300 ease-out-soft ${
-                  isActive ? "opacity-100" : "opacity-0"
-                }`}
+                // Cross-fade between variants; no slide, no zoom.
+                className={`motion-fade absolute object-contain ${isActive && loaded.has(v.id) ? "opacity-100" : "opacity-0"}`}
                 style={logoBox(v)}
               />
             );
@@ -84,7 +100,7 @@ export function LogoStage({
           aria-keyshortcuts="T"
           title="Show transparency (T)"
           onClick={onToggleTransparent}
-          className={`inline-flex h-8 items-center gap-1.5 rounded-full border border-control bg-surface px-3 text-[13px] font-medium text-ink transition-colors duration-150 ease-out-soft hover:bg-hover sm:absolute sm:right-4 sm:top-4 sm:backdrop-blur-sm ${chrome}`}
+          className={`motion-press inline-flex h-8 items-center gap-2 rounded-full border border-control bg-surface px-3 text-small font-medium text-ink hover:bg-hover sm:absolute sm:right-4 sm:top-4 sm:backdrop-blur-sm ${chrome}`}
         >
           <Grid2x2 aria-hidden className="size-3.5" />
           Transparent
