@@ -1,8 +1,8 @@
 "use client";
 
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
-import { useEffect } from "react";
-import { savePref, THEME_PREFS, useThemePref, watchTheme, type ThemePref } from "@/lib/theme";
+import { useEffect, useLayoutEffect } from "react";
+import { ensureTheme, savePref, THEME_PREFS, useThemePref, watchTheme, type ThemePref } from "@/lib/theme";
 
 const OPTIONS: Record<ThemePref, { label: string; icon: LucideIcon }> = {
   light: { label: "Light", icon: Sun },
@@ -18,6 +18,7 @@ const nextPref = (p: ThemePref) => THEME_PREFS[(THEME_PREFS.indexOf(p) + 1) % TH
  */
 export function ThemeToggle() {
   const pref = useThemePref();
+  useLayoutEffect(ensureTheme, []);
   useEffect(watchTheme, []);
 
   return (
@@ -31,10 +32,10 @@ export function ThemeToggle() {
         const Icon = OPTIONS[p].icon;
         return <Icon key={p} aria-hidden data-option={p} className="theme-option size-[18px]" />;
       })}
-      {/* Names the current mode; hover or keyboard focus only. */}
+      {/* Names the current mode; hover or keyboard focus only. Right-aligned, so it never runs off the screen edge. */}
       <span
         aria-hidden
-        className="motion-fade pointer-events-none absolute left-1/2 top-full z-10 mt-2 -translate-x-1/2 whitespace-nowrap rounded-full bg-btn px-2 py-1 text-caption text-btn-ink opacity-0 shadow-pill group-hover:opacity-100 group-focus-visible:opacity-100"
+        className="motion-fade pointer-events-none absolute right-0 top-full z-10 mt-2 whitespace-nowrap rounded-full bg-btn px-2 py-1 text-caption text-btn-ink opacity-0 shadow-pill group-hover:opacity-100 group-focus-visible:opacity-100"
       >
         {THEME_PREFS.map((p) => (
           <span key={p} data-option={p} className="theme-option">

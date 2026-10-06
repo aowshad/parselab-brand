@@ -1,30 +1,49 @@
 # ParseLab Brand Assets
 
-Brand assets portal for ParseLab LLC products. Next.js (App Router) static export, Tailwind CSS v4, content in the repo.
+Brand assets portal for ParseLab LLC products. Next.js (App Router), Tailwind CSS v4, Supabase Postgres (through Prisma) for content and Supabase Storage for files.
 
-- `/`: a card for every brand, plus "Download all" (every brand kit in one zip).
-- `/<slug>`: one page per brand, rendered from that brand's `brand.json` only. Sections: Logos, Colors, Typography, Usage guidelines.
+- `/`: a card for every published brand, plus "Download all" (every brand kit in one zip).
+- `/<slug>/`: one page per brand. Sections: Logos, Colors, Typography, Usage guidelines.
+- An admin panel to manage all of it is being built in phases (see `BRAND_ADMIN_PROMPT.md`).
 
 ## Run locally
 
+Needs a Supabase project (the dev one is `brand-portal-dev`) with a **public** bucket named `brand-assets`.
+
 ```sh
-corepack enable        # once, provides pnpm (or use `corepack pnpm …`)
-pnpm install
-pnpm dev               # http://localhost:3000
-pnpm build && npx serve out
+corepack enable          # once, provides pnpm (or use `corepack pnpm …`)
+pnpm install             # also generates the Prisma client
+cp .env.example .env.local   # then fill in the Supabase values and the admin login
+pnpm db:migrate          # create the tables
+pnpm db:seed             # create the admin and import the brands in prisma/seed-data/
+pnpm dev                 # http://localhost:3000
 ```
 
-`pnpm dev` watches `content/` and regenerates assets when a `brand.json` or SVG changes; refresh the browser to see it.
+`pnpm build && pnpm start` runs the production build. Public pages are prerendered from the database and cached; an admin save expires just the pages it changed.
 
-Set `SITE_URL=https://your-domain` when building for production, so link previews (Open Graph images) use absolute URLs. It defaults to `http://localhost:3000`.
+`.env.local` is git-ignored. `SUPABASE_SERVICE_ROLE_KEY` is server-only: never give it a `NEXT_PUBLIC_` prefix.
 
-Set `BASE_PATH=/sub-path` when building for a host that serves the site from a sub-path (e.g. GitHub Pages project sites).
+### Database
 
-## Public preview (GitHub Pages)
+- Schema: [`prisma/schema.prisma`](prisma/schema.prisma). Migrations run over `DIRECT_URL`; the app uses the pooled `DATABASE_URL`.
+- Every table has row-level security on with no policies, so Supabase's public REST API (anon key) can read and write nothing. New tables need `ENABLE ROW LEVEL SECURITY` in their migration.
+- [`lib/brands.ts`](lib/brands.ts) is the public site's only data layer. Draft brands never leave it: they're not on the home page and their URL is a 404.
+- Files are stored as `brands/<brandId>/<kind>/<uuid>/<file name>` and served from Supabase's CDN; download links save under the file's real name.
 
-**https://aowshad.github.io/parselab-brand/**
+### Seed
 
-Every push to `main` rebuilds and publishes the site through [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): it generates the assets, builds with `BASE_PATH=/parselab-brand` and `SITE_URL=https://aowshad.github.io`, and deploys `out/`. Watch a deploy in the repo's **Actions** tab; it takes about two minutes. Pages must be set to **Source: GitHub Actions** (Settings → Pages), otherwise GitHub shows this README instead of the site.
+`pnpm db:seed` ([`prisma/seed.ts`](prisma/seed.ts)) creates the one admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`, only if no admin exists yet, then imports every brand in `prisma/seed-data/brands/` with its files. It's idempotent: existing brands and settings are left alone and files are matched by content hash. It refuses `NODE_ENV=production` unless you pass `--force`.
+
+### Tests
+
+With the site running on port 4173 (`pnpm start -p 4173`):
+
+- `pnpm test:e2e`: every page, file and download works, and the interactive pieces (theme, logo tabs, copy, downloads) behave.
+- `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
+
+## Public preview (GitHub Pages, paused)
+
+**https://aowshad.github.io/parselab-brand/** serves the last static build. The site now needs the database, so [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) only runs manually; the site moves to Vercel when the admin panel goes live.
 
 ## Sharing and shortcuts
 
@@ -33,36 +52,19 @@ Every push to `main` rebuilds and publishes the site through [`.github/workflows
 - **Section anchors:** `#logos`, `#colors`, `#typography`, `#usage`.
 - **Keyboard:** arrow keys, Home and End move between tabs and through the download menu, and Esc closes the menu. While focus is in the logo section, `T` toggles the transparency preview and `D` downloads the current SVG.
 
-## Asset pipeline
+## Asset pipeline (seed only)
 
-`pnpm assets` ([`scripts/build-assets.ts`](scripts/build-assets.ts)) runs automatically before `pnpm dev` and `pnpm build`. For each brand it writes to `public/brands/<slug>/` (git-ignored):
-
-| Output | Path |
-| --- | --- |
-| Optimized SVG (svgo) | `logos/svg/<slug>-<id>.svg` |
-| Transparent PNG, 512/1024/2048/4096 px wide | `logos/png/<slug>-<id>@<width>.png` |
-| Palette | `colors.css`, `colors.json` |
-| Brand kit (`svg/`, `png/<width>/`, colors) | `<slug>-brand-kit.zip` |
-| One zip per logo group | `<slug>-<groupKey>-logos.zip` |
-| 1200×630 link-preview image | `og.png` (plus `public/brands/og.png` for the home page) |
-
-Brands without logos get no kit, and their "Download kit" buttons are hidden. Every kit is also combined into `public/brands/parselab-brand-kits.zip` for "Download all" on the home page; that button is hidden when no brand has a kit.
-
-It also writes `.generated/manifest.json` (paths and sizes for the UI). Sources whose hash hasn't changed are skipped (`.cache/`); delete that folder to force a full re-render. Outputs for removed variants or brands are deleted. Zips are byte-identical between builds.
+`pnpm assets` ([`scripts/build-assets.ts`](scripts/build-assets.ts)) renders the seed data's files into `.generated/assets/` (git-ignored, never served): optimized SVGs (svgo), transparent PNGs at 512/1024/2048/4096 px, `colors.css` / `colors.json`, a zip per logo type, each brand kit, the combined kit and the 1200×630 link-preview images. The seed runs it and uploads the results. Unchanged sources are skipped (`.cache/`); zips are byte-identical between builds.
 
 Logos should use outlined paths: `<text>` renders with whatever system fonts the build machine has.
 
 ## Adding a brand
 
-1. Create `content/brands/<slug>/` with `brand.json` and, once you have them, `logos/*.svg`. The folder name must equal `slug`.
-2. Set `"status"`: `"live"` (needs at least one logo group) or `"soon"` (shows "Soon" on its home card; empty sections show "Coming soon").
-3. Run `pnpm build`. The home card, brand page, PNGs and zips are generated. No code changes.
-
-`pnpm validate` checks all content without building. Invalid content fails `pnpm dev` and `pnpm build` with every problem listed by brand, variant and path.
+Until the admin panel can do it: add `prisma/seed-data/brands/<slug>/` with `brand.json` and `logos/*.svg` (the folder name must equal `slug`), then run `pnpm db:seed`. Only brands not yet in the database are imported. `pnpm validate` checks the seed data.
 
 ### `brand.json`
 
-The schema lives in [`lib/schema.ts`](lib/schema.ts). Copy [`content/brands/parselab/brand.json`](content/brands/parselab/brand.json) as a starting point; [`optionia`](content/brands/optionia/brand.json) shows a gradient color and [`inkybay`](content/brands/inkybay/brand.json) the minimum for a `soon` brand.
+The schema lives in [`lib/schema.ts`](lib/schema.ts). Copy [`prisma/seed-data/brands/parselab/brand.json`](prisma/seed-data/brands/parselab/brand.json) as a starting point; [`optionia`](prisma/seed-data/brands/optionia/brand.json) shows a gradient color and [`inkybay`](prisma/seed-data/brands/inkybay/brand.json) the minimum for a `soon` brand.
 
 | Field | Notes |
 | --- | --- |

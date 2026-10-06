@@ -54,6 +54,9 @@ const MIME: Record<string, string> = {
 
 const stats = { uploaded: 0, reused: 0 };
 
+/** Letters, digits, `.`, `-`, `_` and `@` only: no slashes, no traversal. */
+const safeName = (name: string) => name.replace(/[^A-Za-z0-9._@-]+/g, "-").replace(/^[.-]+/, "") || "file";
+
 /**
  * Uploads one generated file under a server-generated UUID key, or reuses an identical file
  * (same bytes, same download name) that's already stored.
@@ -70,7 +73,9 @@ async function store(ref: FileRef | ImageRef, owner: string, kind: string): Prom
   const ext = path.extname(abs).toLowerCase();
   const mime = MIME[ext];
   if (!mime) throw new Error(`Unexpected file type: ${abs}`);
-  const key = `${owner}/${kind}/${crypto.randomUUID()}${ext}`;
+  // `<uuid>/<name>`: the UUID keeps keys unique and unguessable; the clean name is what browsers
+  // save the file as when the storage CDN sends no file name (it doesn't for SVGs).
+  const key = `${owner}/${kind}/${crypto.randomUUID()}/${safeName(ref.filename)}`;
   // UUID keys never change content, so CDNs and browsers may cache them for a year.
   const { error } = await storage.upload(key, bytes, { contentType: mime, cacheControl: "31536000", upsert: false });
   if (error) throw new Error(`Upload failed for ${ref.filename}: ${error.message}`);

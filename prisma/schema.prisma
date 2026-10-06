@@ -133,7 +133,7 @@ model Color {
 
 model FileObject {
   id        String   @id @default(cuid())
-  /// Storage key, always server-generated: brands/<brandId>/<kind>/<uuid>.<ext>
+  /// Storage key, always server-generated: brands/<brandId>/<kind>/<uuid>/<clean file name>
   key       String   @unique
   mime      String
   size      Int

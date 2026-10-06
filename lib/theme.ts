@@ -18,6 +18,20 @@ export function readPref(): ThemePref {
 const resolve = (pref: ThemePref): Theme =>
   pref === "system" ? (matchMedia(DARK_QUERY).matches ? "dark" : "light") : pref;
 
+/**
+ * The inline <head> script normally sets the theme before first paint. A page rendered entirely
+ * in the browser (a 404 for an unknown brand arrives as an error shell) never runs it, so the
+ * toggle calls this on mount to apply the stored choice before that paint instead.
+ */
+export function ensureTheme() {
+  if (root().dataset.theme) return;
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem(STORAGE_KEY);
+  } catch {}
+  applyPref(stored === "light" || stored === "dark" ? stored : "system", { animate: false });
+}
+
 let switchTimer: ReturnType<typeof setTimeout> | undefined;
 
 /** Applies a theme choice. Colors cross-fade for one --dur-slow; never on first load. */
