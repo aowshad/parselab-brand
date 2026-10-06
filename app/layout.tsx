@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { ToastProvider } from "@/components/ui/Toast";
-import { getManifest } from "@/lib/manifest";
+import { getSiteSettings } from "@/lib/brands";
 import { withBase } from "@/lib/paths";
 import { THEME_SCRIPT } from "@/lib/theme-script";
 import "./globals.css";
 
 const DESCRIPTION = "Logos, colors and guidelines for every ParseLab product.";
 
-export function generateMetadata(): Metadata {
-  const og = getManifest().og;
+export async function generateMetadata(): Promise<Metadata> {
+  const { og } = await getSiteSettings();
   return {
     // Absolute URLs for link previews. Set SITE_URL (e.g. https://brand.parselab.com) when deploying.
     metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000"),
@@ -21,7 +21,7 @@ export function generateMetadata(): Metadata {
       siteName: "ParseLab Brand",
       title: "Brand assets",
       description: DESCRIPTION,
-      images: [{ url: withBase(og.path), width: 1200, height: 630 }],
+      images: og ? [{ url: withBase(og.path), width: 1200, height: 630 }] : [],
     },
     twitter: { card: "summary_large_image" },
   };

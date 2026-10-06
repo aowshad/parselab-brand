@@ -9,22 +9,19 @@ import { Footer } from "@/components/shell/Footer";
 import { TocChips, TocSidebar, type TocItem } from "@/components/shell/Toc";
 import { BrandTopBar } from "@/components/shell/TopBar";
 import { TypographySection } from "@/components/typography/TypographySection";
-import { getAllBrands } from "@/lib/content";
+import { getBrandBySlug, getPublishedSlugs, getSiteSettings } from "@/lib/brands";
 import { withBase } from "@/lib/paths";
-import { getBrandView } from "@/lib/view";
 import { RevealOnScroll } from "@/components/shell/RevealOnScroll";
 
-// Every brand in content/brands gets a page; any other slug is a 404.
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return getAllBrands().map((b) => ({ brand: b.slug }));
+// Public brands are prerendered; one published later renders on its first visit. Drafts are a 404.
+export async function generateStaticParams() {
+  return (await getPublishedSlugs()).map((brand) => ({ brand }));
 }
 
 type Props = { params: Promise<{ brand: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const brand = getBrandView((await params).brand);
+  const brand = await getBrandBySlug((await params).brand);
   if (!brand) return {};
   const description = `${brand.name} logos, colors and brand guidelines. ${brand.description}`;
   const image = { url: withBase(brand.og.path), width: 1200, height: 630, alt: `${brand.name} logo` };
@@ -43,7 +40,7 @@ const COLORS_SUBTITLE = "Click any color to copy its hex.";
 
 /** One brand's page. It loads only this brand: no other brand is read, listed or linked. */
 export default async function BrandPage({ params }: Props) {
-  const brand = getBrandView((await params).brand);
+  const [brand, site] = await Promise.all([getBrandBySlug((await params).brand), getSiteSettings()]);
   if (!brand) notFound();
   const { variants, colors } = brand.counts;
 
@@ -97,7 +94,7 @@ export default async function BrandPage({ params }: Props) {
           </div>
         </main>
       </div>
-      <Footer contact={brand.contact} />
+      <Footer contact={brand.contact} text={site.footerText} />
       <RevealOnScroll />
     </>
   );

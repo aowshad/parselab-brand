@@ -24,7 +24,9 @@ import type { Brand } from "../lib/schema";
 const PIPELINE_VERSION = 1;
 
 const ROOT = process.cwd();
-const PUBLIC_BRANDS = path.join(ROOT, "public", "brands");
+/** Output root: the seed uploads from here to storage. Nothing here is served by the app. */
+const OUT_ROOT = path.join(ROOT, ".generated", "assets");
+const PUBLIC_BRANDS = path.join(OUT_ROOT, "brands");
 const ALL_KITS = path.join(PUBLIC_BRANDS, "parselab-brand-kits.zip");
 const SITE_OG = path.join(PUBLIC_BRANDS, "og.png");
 const FONT_DIR = path.join(ROOT, "node_modules", "geist", "dist", "fonts", "geist-sans");
@@ -39,7 +41,7 @@ const sha = (...parts: (string | Buffer)[]) => {
   return h.digest("hex").slice(0, 16);
 };
 const kebab = (s: string) => s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const toPublic = (abs: string) => "/" + path.relative(path.join(ROOT, "public"), abs).split(path.sep).join("/");
+const toPublic = (abs: string) => "/" + path.relative(OUT_ROOT, abs).split(path.sep).join("/");
 
 function fileRef(abs: string): FileRef {
   return { path: toPublic(abs), filename: path.basename(abs), sizeKb: Math.round((fs.statSync(abs).size / 1024) * 10) / 10 };

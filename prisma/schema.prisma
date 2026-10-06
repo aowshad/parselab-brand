@@ -1,0 +1,178 @@
+// Brand portal data. The public site reads brands, logos, colors and settings from here;
+// the admin panel writes them. Files themselves live in Supabase Storage (bucket `brand-assets`).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+// Connection URLs live in prisma.config.ts (migrations: DIRECT_URL) and lib/db.ts (runtime: DATABASE_URL).
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Auth: exactly one admin ─────────────────────────────────────────────────────────────
+
+model Admin {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  updatedAt    DateTime  @updatedAt
+  sessions     Session[]
+}
+
+model Session {
+  /// SHA-256 of the random 32-byte token in the cookie; the raw token is never stored.
+  id        String   @id
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+
+  @@index([adminId])
+}
+
+// ── Brands ──────────────────────────────────────────────────────────────────────────────
+
+model Brand {
+  id               String      @id @default(cuid())
+  /// URL: /<slug>/
+  slug             String      @unique
+  name             String
+  tagline          String
+  /// DRAFT is hidden from the public site (its URL is a 404).
+  status           BrandStatus @default(DRAFT)
+  sortOrder        Int         @default(0)
+  accent           String?
+  /// Square app icon: favicon and the brand page header. FileObject ids, resolved in lib/brands.ts.
+  iconFileId       String?
+  kitFileId        String?
+  kitMode          KitMode     @default(AUTO)
+  kitBuiltAt       DateTime?
+  /// Generated from the colors; never edited by hand.
+  colorsCssFileId  String?
+  colorsJsonFileId String?
+  /// 1200×630 link-preview image.
+  ogFileId         String?
+  /// `{ typefaces: [...] }`, see lib/schema.ts. Null shows "Coming soon".
+  typography       Json?
+  /// Null shows "Coming soon".
+  usage            Json?
+  logoTypes        LogoType[]
+  colors           Color[]
+  updatedAt        DateTime    @updatedAt
+  createdAt        DateTime    @default(now())
+
+  @@index([status, sortOrder])
+}
+
+model LogoType {
+  id          String        @id @default(cuid())
+  brandId     String
+  brand       Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  /// full | mark | icon | square | circle | a custom slug
+  key         String
+  label       String
+  description String
+  sortOrder   Int           @default(0)
+  zipFileId   String?
+  variants    LogoVariant[]
+
+  @@unique([brandId, key])
+}
+
+model LogoVariant {
+  id         String   @id @default(cuid())
+  logoTypeId String
+  logoType   LogoType @relation(fields: [logoTypeId], references: [id], onDelete: Cascade)
+  /// on-dark | on-light | black | white, or a tile: brand | dark
+  key        String
+  /// Switcher label, e.g. "On dark".
+  name       String
+  /// One-line usage hint.
+  hint       String
+  /// Public download name, e.g. "parselab-full-dark-bg.svg".
+  fileName   String
+  /// Background the variant is designed for: the preview canvas color.
+  previewBg  String
+  /// Swatch before the label; defaults to previewBg.
+  dot        String?
+  /// Null for PNG-only uploads (the public page then hides "Download SVG").
+  svgFileId  String?
+  /// Transparent PNGs at 512, 1024, 2048 and 4096px wide.
+  png512Id   String?
+  png1024Id  String?
+  png2048Id  String?
+  png4096Id  String?
+  sortOrder  Int      @default(0)
+
+  @@unique([logoTypeId, key])
+}
+
+model Color {
+  id        String    @id @default(cuid())
+  brandId   String
+  brand     Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  /// "Primary", "Accent", "Wordmark & text", "Backgrounds"
+  role      String
+  name      String
+  kind      ColorKind @default(SOLID)
+  /// SOLID: "#6CA9F3"
+  hex       String?
+  /// GRADIENT: { angle: 135, stops: [{ hex: "#F197FE", at: 0 }, …] }
+  gradient  Json?
+  cmyk      String?
+  pantone   String?
+  sortOrder Int       @default(0)
+
+  @@index([brandId, sortOrder])
+}
+
+// ── Files ───────────────────────────────────────────────────────────────────────────────
+
+model FileObject {
+  id        String   @id @default(cuid())
+  /// Storage key, always server-generated: brands/<brandId>/<kind>/<uuid>.<ext>
+  key       String   @unique
+  mime      String
+  size      Int
+  /// Public download name (the URL itself ends in a UUID).
+  name      String
+  width     Int?
+  height    Int?
+  /// Content hash: lets the seed (and re-uploads) reuse an identical file.
+  sha256    String
+  createdAt DateTime @default(now())
+
+  @@index([sha256])
+}
+
+// ── Site ────────────────────────────────────────────────────────────────────────────────
+
+model SiteSettings {
+  id           Int     @id @default(1)
+  homeTitle    String  @default("Brand assets")
+  homeSubtitle String  @default("Logos, colors and guidelines for every ParseLab product.")
+  footerText   String  @default("© ParseLab LLC. Assets are for approved use only.")
+  contactEmail String  @default("brand@parselab.com")
+  allKitFileId String?
+  allKitMode   KitMode @default(AUTO)
+  ogFileId     String?
+}
+
+enum BrandStatus {
+  DRAFT
+  SOON
+  LIVE
+}
+
+enum KitMode {
+  AUTO
+  MANUAL
+}
+
+enum ColorKind {
+  SOLID
+  GRADIENT
+}

@@ -1,27 +1,27 @@
 import { BrandCard } from "@/components/home/BrandCard";
 import { Footer } from "@/components/shell/Footer";
 import { HomeTopBar } from "@/components/shell/TopBar";
-import { SITE } from "@/lib/site";
-import { getAllKits, getBrandCards } from "@/lib/view";
+import { getPublishedBrands, getSiteSettings } from "@/lib/brands";
 
-export default function Home() {
+export default async function Home() {
+  const [site, brands] = await Promise.all([getSiteSettings(), getPublishedBrands()]);
   return (
     <>
-      <HomeTopBar all={getAllKits()} />
+      <HomeTopBar all={site.allKit} />
       <main className="container-page">
         <header className="pt-24">
-          <h1 className="text-display text-balance">Brand assets</h1>
-          <p className="mt-3 max-w-[560px] text-body text-pretty text-muted">Logos, colors and guidelines for every ParseLab product.</p>
+          <h1 className="text-display text-balance">{site.homeTitle}</h1>
+          <p className="mt-3 max-w-[560px] text-body text-pretty text-muted">{site.homeSubtitle}</p>
         </header>
         <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {getBrandCards().map((b) => (
+          {brands.map((b) => (
             <li key={b.slug} className="flex">
               <BrandCard brand={b} />
             </li>
           ))}
         </ul>
       </main>
-      <Footer contact={SITE.contact} />
+      <Footer contact={site.contact} text={site.footerText} />
     </>
   );
 }

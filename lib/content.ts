@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { brandSchema, type Brand } from "./schema";
 
-export const CONTENT_DIR = path.join(process.cwd(), "content", "brands");
+/** Source data for the seed (prisma/seed.ts). The site itself reads the database. */
+export const CONTENT_DIR = path.join(process.cwd(), "prisma", "seed-data", "brands");
 
 export class ContentError extends Error {
   constructor(problems: string[]) {

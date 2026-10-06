@@ -1,6 +1,6 @@
 import { Download } from "lucide-react";
 import { formatSize } from "@/lib/format";
-import type { FileRef } from "@/lib/manifest";
+import type { FileRef } from "@/lib/files";
 import { withBase } from "@/lib/paths";
 import type { BrandView } from "@/lib/view";
 import { buttonClass } from "../ui/Button";

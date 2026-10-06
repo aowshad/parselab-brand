@@ -4,9 +4,10 @@ import type { NextConfig } from "next";
 const basePath = process.env.BASE_PATH || "";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  // Public pages are prerendered and cached ("use cache" in lib/brands.ts); admin saves expire them.
+  cacheComponents: true,
   basePath,
-  // Pages export as <slug>/index.html, which every static host (GitHub Pages included) serves at /<slug>/.
+  // Brand URLs end in a slash (/optionia/), the same as on every static host the site has used.
   trailingSlash: true,
   images: { unoptimized: true },
   env: { NEXT_PUBLIC_BASE_PATH: basePath },

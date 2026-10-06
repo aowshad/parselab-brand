@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps } from "react";
-import type { FileRef } from "@/lib/manifest";
+import type { FileRef } from "@/lib/files";
 import { withBase } from "@/lib/paths";
 import { FeedbackLabel, useFeedback } from "./Feedback";
 import { useToast } from "./Toast";
@@ -22,7 +22,7 @@ export function DownloadLink({
   const { state, run } = useFeedback();
   return (
     <a
-      href={withBase(file.path)}
+      href={file.downloadUrl ?? withBase(file.path)}
       download={file.filename}
       onClick={(e) => {
         toast(`Downloading ${file.filename}`);

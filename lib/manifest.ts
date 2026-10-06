@@ -1,18 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { FileRef, VariantAssets } from "./files";
 
-/** Output widths for every PNG, in px. */
-export const PNG_WIDTHS = [512, 1024, 2048, 4096] as const;
-export type PngWidth = (typeof PNG_WIDTHS)[number];
+export { PNG_WIDTHS, type FileRef, type ImageRef, type PngWidth, type VariantAssets } from "./files";
 
 export const MANIFEST_PATH = path.join(process.cwd(), ".generated", "manifest.json");
 
-/** A generated file. `path` is the public URL path, without any base path. */
-export type FileRef = { path: string; filename: string; sizeKb: number };
-export type ImageRef = FileRef & { width: number; height: number };
-
-export type VariantAssets = { svg: ImageRef; png: (ImageRef & { size: PngWidth })[] };
-
+/**
+ * The asset pipeline's output (scripts/build-assets.ts). Only the seed reads it now, to import
+ * the generated files into storage; the site itself reads the database (lib/brands.ts).
+ */
 export type BrandAssets = {
   /** Null until the brand has at least one logo. */
   kit: FileRef | null;

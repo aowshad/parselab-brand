@@ -1,13 +1,25 @@
-import { gradientCss, isDark } from "./color";
-import { getAllBrands, getBrand } from "./content";
-import { BRAND_FONTS } from "./fonts";
-import { getBrandAssets, getManifest, type FileRef, type VariantAssets } from "./manifest";
-import type { Brand, BrandColor, LogoGroup, LogoVariant, Typeface } from "./schema";
-import { typeScale, type ScaleStep } from "./typography";
-import { cardVariant, type Theme } from "./variants";
+import type { FileRef, VariantAssets } from "./files";
+import type { Typeface } from "./schema";
+import type { ScaleStep } from "./typography";
+import type { Theme } from "./variants";
 
-export type VariantView = LogoVariant & { dot: string; assets: VariantAssets; darkStage: boolean };
-export type LogoGroupView = Omit<LogoGroup, "variants"> & { zip: FileRef; variants: VariantView[] };
+/*
+ * What the public pages render. lib/brands.ts builds these from the database; components
+ * only ever see these shapes, never database rows.
+ */
+
+/** `id` is `<type>-<variant>`, e.g. `full-dark-bg`: used in tab ids and `?variant=` deep links. */
+export type VariantView = {
+  id: string;
+  name: string;
+  usage: string;
+  previewBg: string;
+  dot: string;
+  assets: VariantAssets;
+  darkStage: boolean;
+};
+
+export type LogoGroupView = { key: string; label: string; description: string; zip: FileRef; variants: VariantView[] };
 
 /** A palette card: a solid color with its hex, or a gradient with one hex per stop. */
 export type ColorView = { name: string; role: string } & (
@@ -21,7 +33,17 @@ export type PaletteView = { name: string; colors: ColorView[] };
 export type TypefaceView = Typeface & { fontFamily: string };
 export type TypographyView = { typefaces: TypefaceView[]; scale: (Omit<ScaleStep, "use"> & { face: TypefaceView })[] };
 
-export type BrandView = Omit<Brand, "logoGroups" | "palettes" | "typography"> & {
+export type PublicStatus = "live" | "soon";
+
+export type BrandView = {
+  slug: string;
+  name: string;
+  /** The tagline. */
+  description: string;
+  status: PublicStatus;
+  /** `YYYY-MM-DD` */
+  updatedAt: string;
+  contact: string;
   /** Null until the brand names its typefaces: the section shows "Coming soon". */
   typography: TypographyView | null;
   logoGroups: LogoGroupView[];
@@ -39,71 +61,13 @@ export type BrandView = Omit<Brand, "logoGroups" | "palettes" | "typography"> & 
   counts: { variants: number; colors: number };
 };
 
-function typographyView(brand: Brand): TypographyView | null {
-  const faces = brand.typography?.typefaces;
-  if (!faces) return null;
-  const typefaces = faces.map((f) => {
-    const fontFamily = BRAND_FONTS[f.family];
-    if (!fontFamily) throw new Error(`${brand.slug}: typeface "${f.family}" isn't registered in lib/fonts.ts.`);
-    return { ...f, fontFamily };
-  });
-  const byFamily = (f: Typeface) => typefaces.find((t) => t.family === f.family)!;
-  return { typefaces, scale: typeScale(brand.name, faces).map(({ use: _use, ...s }) => ({ ...s, face: byFamily(s.face) })) };
-}
-
-function colorView(c: BrandColor): ColorView {
-  if ("gradient" in c) {
-    const { angle, stops } = c.gradient;
-    return { name: c.name, role: c.role, kind: "gradient", css: gradientCss(angle, stops), stops: stops.map((s) => s.hex.toUpperCase()) };
-  }
-  return { name: c.name, role: c.role, kind: "solid", hex: c.hex.toUpperCase() };
-}
-
-const countColors = (brand: Brand) => brand.palettes.reduce((n, p) => n + p.colors.length, 0);
-const countVariants = (brand: Brand) => brand.logoGroups.reduce((n, g) => n + g.variants.length, 0);
-
-/** Everything one brand page renders: that brand's content merged with its generated files. */
-export function getBrandView(slug: string): BrandView | undefined {
-  const brand = getBrand(slug);
-  if (!brand) return undefined;
-  const assets = getBrandAssets(slug);
-
-  const logoGroups: LogoGroupView[] = brand.logoGroups.map((group) => {
-    const zip = assets.groups[group.key];
-    if (!zip) throw new Error(`Manifest has no zip for ${slug}/${group.key}. Run \`pnpm assets\`.`);
-    return {
-      ...group,
-      zip,
-      variants: group.variants.map((v) => {
-        const variantAssets = assets.variants[v.id];
-        if (!variantAssets) throw new Error(`Manifest has no files for ${slug}/${v.id}. Run \`pnpm assets\`.`);
-        return { ...v, dot: v.dot ?? v.previewBg, assets: variantAssets, darkStage: isDark(v.previewBg) };
-      }),
-    };
-  });
-
-  const allVariants = logoGroups.flatMap((g) => g.variants);
-  const tile = allVariants.find((v) => v.id === "icon-brand");
-  const iconVariant = tile ?? allVariants[0];
-
-  return {
-    ...brand,
-    logoGroups,
-    palettes: brand.palettes.map((p) => ({ name: p.name, colors: p.colors.map(colorView) })),
-    typography: typographyView(brand),
-    kit: assets.kit,
-    colorFiles: assets.colors,
-    og: assets.og,
-    icon: iconVariant ? { src: iconVariant.assets.svg.path, isTile: Boolean(tile), plate: iconVariant.previewBg } : null,
-    counts: { variants: countVariants(brand), colors: countColors(brand) },
-  };
-}
+export type CardThumb = { src: string; plate: string | null };
 
 export type BrandCardView = {
   slug: string;
   name: string;
   description: string;
-  status: Brand["status"];
+  status: PublicStatus;
   /**
    * Thumbnail logo per theme, both rendered and switched by CSS. `plate` is the last-resort
    * background behind a logo made for the other theme. Both null: the name stands in.
@@ -112,28 +76,13 @@ export type BrandCardView = {
   counts: { variants: number; colors: number };
 };
 
-export type CardThumb = { src: string; plate: string | null };
-
-/** Home page cards: live brands first, then soon, each group in its saved order. */
-export function getBrandCards(): BrandCardView[] {
-  const rank = (b: Brand) => (b.status === "live" ? 0 : 1);
-  return [...getAllBrands()].sort((a, b) => rank(a) - rank(b)).map((b) => {
-    const files = getBrandAssets(b.slug).variants;
-    const thumb = (theme: Theme): CardThumb | null => {
-      const pick = cardVariant(b.logoGroups, theme);
-      const svg = pick && files[pick.variant.id]?.svg;
-      return svg ? { src: svg.path, plate: pick.plate } : null;
-    };
-    return {
-      slug: b.slug,
-      name: b.name,
-      description: b.description,
-      status: b.status,
-      thumbs: { light: thumb("light"), dark: thumb("dark") },
-      counts: { variants: countVariants(b), colors: countColors(b) },
-    };
-  });
-}
-
-/** Combined zip of every brand kit, or null when none exist yet. */
-export const getAllKits = (): FileRef | null => getManifest().all;
+/** Home page text, footer and the site-wide files. */
+export type SiteView = {
+  homeTitle: string;
+  homeSubtitle: string;
+  footerText: string;
+  contact: string;
+  /** "Download all": every brand kit in one zip. Null hides the button. */
+  allKit: FileRef | null;
+  og: FileRef | null;
+};

@@ -1,10 +1,11 @@
-# Builds the static site and publishes it to GitHub Pages on every push to main.
-# Public URL: https://aowshad.github.io/parselab-brand/
+# Publishes the site to GitHub Pages: https://aowshad.github.io/parselab-brand/
+#
+# Paused (manual only): the site now reads brands from the database, so this static build no
+# longer works. github.io keeps serving its last deploy until the site moves to Vercel, where
+# this workflow will be removed.
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
