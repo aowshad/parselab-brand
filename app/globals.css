@@ -31,6 +31,7 @@
   --chip-ink: #0a0a0b;
   --success: #22c55e; /* on --btn-bg (toasts) */
   --danger: #f87171;
+  --error: #b42318; /* inline form errors on the page: 6.5:1 on surface */
   --shimmer: rgb(255 255 255 / 0.6);
   --shadow-color: rgb(11 13 18 / 0.08);
   --shadow-color-soft: rgb(11 13 18 / 0.04);
@@ -56,6 +57,7 @@
   --chip-ink: #ededef;
   --success: #16a34a;
   --danger: #dc2626;
+  --error: #f97066;
   --shimmer: rgb(255 255 255 / 0.06);
   --shadow-color: rgb(0 0 0 / 0.4);
   --shadow-color-soft: rgb(0 0 0 / 0.2);
@@ -83,6 +85,7 @@
     --chip-ink: #ededef;
     --success: #16a34a;
     --danger: #dc2626;
+    --error: #f97066;
     --shimmer: rgb(255 255 255 / 0.06);
     --shadow-color: rgb(0 0 0 / 0.4);
     --shadow-color-soft: rgb(0 0 0 / 0.2);
@@ -130,6 +133,7 @@
   --color-chip-ink: var(--chip-ink);
   --color-success: var(--success);
   --color-danger: var(--danger);
+  --color-error: var(--error);
 }
 
 @theme {

@@ -39,7 +39,18 @@ pnpm dev                 # http://localhost:3000
 With the site running on port 4173 (`pnpm start -p 4173`):
 
 - `pnpm test:e2e`: every page, file and download works, and the interactive pieces (theme, logo tabs, copy, downloads) behave.
+- `pnpm test:auth`: admin guards, sign-in and lockout, account changes, sessions and `admin:reset`. Needs the seeded `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env.local`; it changes them during the run and always puts them back.
 - `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
+
+## Admin
+
+`/admin/` is a private panel for the one admin (created by the seed). There is no sign-up and no way to create a second admin.
+
+- **Sign in** at `/admin/login/`. Five wrong passwords for the same email from the same IP lock that pair out for 15 minutes; errors never say whether the email exists.
+- **Sessions** are a random 32-byte token in an httpOnly, Secure, SameSite=Lax `__Host-` cookie (plain name in development). The database stores only an HMAC of it (`SESSION_SECRET`). They last 7 days and renew while you use them.
+- **Protection:** [`proxy.ts`](proxy.ts) checks the session for every `/admin/**` page and `/api/admin/**` call (redirect to sign-in, or 401) before anything renders; every page, server action and route checks it again ([`lib/auth/session.ts`](lib/auth/session.ts)). Admin pages are `noindex` and disallowed in `robots.txt`.
+- **Account** (`/admin/account/`): change email (needs the current password), change password (12+ characters; signs out every other session), see and sign out sessions.
+- **Lost password:** `pnpm admin:reset -- --email you@example.com` asks for a new one in the terminal (hidden), sets it and signs out every session. There is deliberately no email-based reset.
 
 ## Public preview (GitHub Pages, paused)
 

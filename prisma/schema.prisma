@@ -33,6 +33,16 @@ model Session {
   @@index([adminId])
 }
 
+/// Failed sign-ins per IP + email: 5 in 15 minutes locks that pair out for 15 minutes.
+/// Kept in the database because serverless functions share no memory.
+model LoginThrottle {
+  /// SHA-256 of `<ip> <email>`: no raw IPs or emails stored here.
+  key         String    @id
+  failures    Int       @default(0)
+  windowStart DateTime  @default(now())
+  lockedUntil DateTime?
+}
+
 // ── Brands ──────────────────────────────────────────────────────────────────────────────
 
 model Brand {

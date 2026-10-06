@@ -14,7 +14,9 @@
     "assets": "tsx scripts/build-assets.ts",
     "validate": "tsx scripts/validate-content.ts",
     "test:e2e": "node tests/e2e/links.mjs && node tests/e2e/smoke.mjs",
-    "test:parity": "node tests/e2e/parity.mjs"
+    "test:parity": "node tests/e2e/parity.mjs",
+    "admin:reset": "tsx scripts/admin-reset.ts",
+    "test:auth": "node tests/e2e/auth.mjs"
   },
   "packageManager": "pnpm@12.8.1",
   "type": "module",
