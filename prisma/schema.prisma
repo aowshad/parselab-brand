@@ -71,6 +71,7 @@ model Brand {
   usage            Json?
   logoTypes        LogoType[]
   colors           Color[]
+  redirects        BrandRedirect[]
   updatedAt        DateTime    @updatedAt
   createdAt        DateTime    @default(now())
 
@@ -156,6 +157,31 @@ model FileObject {
   createdAt DateTime @default(now())
 
   @@index([sha256])
+}
+
+/// One signed upload: the browser may put exactly one file at `key` (a server-generated staging
+/// path). The server only accepts it within 2 minutes of issue, once; stale ones are swept.
+model UploadTicket {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  /// What the file is for, e.g. "brand-icon"; decides allowed types and size.
+  purpose   String
+  brandId   String?
+  fileName  String
+  size      Int
+  mime      String
+  issuedAt  DateTime @default(now())
+  usedAt    DateTime?
+
+  @@index([issuedAt])
+}
+
+/// After a slug change, the old URL keeps working: /<from>/ redirects to the brand's current page.
+model BrandRedirect {
+  fromSlug  String   @id
+  brandId   String
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 // ── Site ────────────────────────────────────────────────────────────────────────────────

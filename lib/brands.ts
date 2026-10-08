@@ -243,3 +243,12 @@ export async function getBrandBySlug(slug: string): Promise<BrandView | null> {
     counts: { variants: allVariants.length, colors: colors.length },
   };
 }
+
+/** Where an old slug now lives (after a rename that kept a redirect), or null. Public brands only. */
+export async function getRedirectTarget(slug: string): Promise<string | null> {
+  "use cache";
+  cacheLife("max");
+  cacheTag(CACHE_TAGS.brands, CACHE_TAGS.brand(slug));
+  const r = await db.brandRedirect.findUnique({ where: { fromSlug: slug }, select: { brand: { select: { slug: true, status: true } } } });
+  return r && PUBLIC.includes(r.brand.status) ? r.brand.slug : null;
+}

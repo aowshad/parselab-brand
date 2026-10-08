@@ -76,8 +76,8 @@ async function store(ref: FileRef | ImageRef, owner: string, kind: string): Prom
   // `<uuid>/<name>`: the UUID keeps keys unique and unguessable; the clean name is what browsers
   // save the file as when the storage CDN sends no file name (it doesn't for SVGs).
   const key = `${owner}/${kind}/${crypto.randomUUID()}/${safeName(ref.filename)}`;
-  // UUID keys never change content, so CDNs and browsers may cache them for a year.
-  const { error } = await storage.upload(key, bytes, { contentType: mime, cacheControl: "31536000", upsert: false });
+  // One hour: on the free plan the CDN isn't purged on delete, so deletions take effect within an hour.
+  const { error } = await storage.upload(key, bytes, { contentType: mime, cacheControl: "3600", upsert: false });
   if (error) throw new Error(`Upload failed for ${ref.filename}: ${error.message}`);
   stats.uploaded++;
   const dims = "width" in ref ? { width: ref.width, height: ref.height } : {};

@@ -1,6 +1,6 @@
 import { BookOpen, Images, Palette, Type } from "lucide-react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { BrandHero } from "@/components/brand/BrandHero";
 import { PaletteSection } from "@/components/colors/PaletteSection";
 import { LogoSection } from "@/components/logos/LogoSection";
@@ -9,7 +9,7 @@ import { Footer } from "@/components/shell/Footer";
 import { TocChips, TocSidebar, type TocItem } from "@/components/shell/Toc";
 import { BrandTopBar } from "@/components/shell/TopBar";
 import { TypographySection } from "@/components/typography/TypographySection";
-import { getBrandBySlug, getPublishedSlugs, getSiteSettings } from "@/lib/brands";
+import { getBrandBySlug, getPublishedSlugs, getRedirectTarget, getSiteSettings } from "@/lib/brands";
 import { withBase } from "@/lib/paths";
 import { RevealOnScroll } from "@/components/shell/RevealOnScroll";
 
@@ -40,8 +40,14 @@ const COLORS_SUBTITLE = "Click any color to copy its hex.";
 
 /** One brand's page. It loads only this brand: no other brand is read, listed or linked. */
 export default async function BrandPage({ params }: Props) {
-  const [brand, site] = await Promise.all([getBrandBySlug((await params).brand), getSiteSettings()]);
-  if (!brand) notFound();
+  const slug = (await params).brand;
+  const [brand, site] = await Promise.all([getBrandBySlug(slug), getSiteSettings()]);
+  if (!brand) {
+    // A renamed brand keeps its old address working.
+    const moved = await getRedirectTarget(slug);
+    if (moved) permanentRedirect(`/${moved}/`);
+    notFound();
+  }
   const { variants, colors } = brand.counts;
 
   // Labels match the section headings word for word.

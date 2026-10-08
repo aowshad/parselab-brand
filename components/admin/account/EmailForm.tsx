@@ -46,7 +46,7 @@ export function EmailForm({ email }: { email: string }) {
           <button type="button" onClick={() => setConfirming(null)} className={buttonClass({ variant: "ghost", size: "sm" })}>
             Cancel
           </button>
-          <SubmitButton className="h-8 rounded-button-sm px-3">Change email</SubmitButton>
+          <SubmitButton size="sm">Change email</SubmitButton>
         </div>
       ) : (
         <div className="flex justify-end">

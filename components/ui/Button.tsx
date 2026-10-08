@@ -1,6 +1,6 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "ghost" | "quiet";
+type Variant = "primary" | "ghost" | "quiet" | "inverse";
 type Size = "md" | "sm";
 
 // motion-press: colors fade over --dur-fast, and :active presses to 0.98 for 80ms.
@@ -12,6 +12,8 @@ const variants: Record<Variant, string> = {
   primary: "bg-btn text-btn-ink hover:bg-btn-hover",
   ghost: "border border-control bg-surface text-ink hover:border-strong hover:bg-hover",
   quiet: "text-muted hover:bg-hover hover:text-ink",
+  /** On a primary-colored surface (e.g. the save bar). */
+  inverse: "bg-btn-ink text-btn hover:bg-btn-ink/90",
 };
 
 const sizes: Record<Size, string> = {

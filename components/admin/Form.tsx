@@ -66,10 +66,10 @@ export function PasswordInput({ invalid, ...props }: InputHTMLAttributes<HTMLInp
 }
 
 /** Submit button that shows a spinner and blocks double submits while the action runs. */
-export function SubmitButton({ children, variant = "primary", className = "" }: { children: ReactNode; variant?: "primary" | "ghost"; className?: string }) {
+export function SubmitButton({ children, variant = "primary", size = "md", className = "" }: { children: ReactNode; variant?: "primary" | "ghost" | "inverse"; size?: "md" | "sm"; className?: string }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} aria-busy={pending || undefined} className={buttonClass({ variant, className })}>
+    <button type="submit" disabled={pending} aria-busy={pending || undefined} className={buttonClass({ variant, size, className })}>
       {pending && <span aria-hidden className="size-3.5 animate-spin rounded-full border-2 border-current border-r-transparent" />}
       {children}
     </button>

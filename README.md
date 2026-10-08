@@ -40,6 +40,7 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 
 - `pnpm test:e2e`: every page, file and download works, and the interactive pieces (theme, logo tabs, copy, downloads) behave.
 - `pnpm test:auth`: admin guards, sign-in and lockout, account changes, sessions and `admin:reset`. Needs the seeded `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env.local`; it changes them during the run and always puts them back.
+- `pnpm test:admin`: the Brands list and General tab end to end (creates and deletes a test brand "ProductsModel"), including upload checks and the upload API's security.
 - `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
 
 ## Admin
@@ -51,6 +52,21 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - **Protection:** [`proxy.ts`](proxy.ts) checks the session for every `/admin/**` page and `/api/admin/**` call (redirect to sign-in, or 401) before anything renders; every page, server action and route checks it again ([`lib/auth/session.ts`](lib/auth/session.ts)). Admin pages are `noindex` and disallowed in `robots.txt`.
 - **Account** (`/admin/account/`): change email (needs the current password), change password (12+ characters; signs out every other session), see and sign out sessions.
 - **Lost password:** `pnpm admin:reset -- --email you@example.com` asks for a new one in the terminal (hidden), sets it and signs out every session. There is deliberately no email-based reset.
+
+### Brands (`/admin/`)
+
+- **List:** drag the handle (or focus it, press Space, use the arrow keys, press Space) to set the home-page order; change status inline; the row menu has Edit, View page, Duplicate and Delete. Search and the status filter narrow the list (reordering needs the full list).
+- **Status:** Draft is hidden (not on the home page, URL is a 404), Soon and Live are public. New brands start as Draft.
+- **General tab:** name, URL slug (lowercase, unique, not a reserved word such as `admin` or `api`), tagline, status, accent color, brand icon, and a preview of the home card in both themes. Changing the slug can keep a redirect from the old URL; old URLs can be removed later. Unsaved changes show a save bar and ask before you leave.
+- **Delete** (Danger zone or row menu) needs the brand's name typed exactly, and removes everything in its storage folder. **Duplicate** copies a brand, files included, as a Draft.
+- Every save expires exactly the public pages it touched (`updateTag`), so the site shows it on the next visit.
+- The Logos, Colors, Typography, Usage and Brand kit tabs get their editors in the next phases.
+
+### Uploads
+
+Files go straight from the browser to storage, never through the app server: `POST /api/admin/uploads/sign` (session, same origin, declared type and size) issues a signed URL for a server-generated `staging/<uuid>/` key and a single-use ticket honored for 2 minutes; the browser `PUT`s the file; `POST /api/admin/uploads/complete` sniffs the real content, rejects SVGs with scripts, event handlers or `foreignObject`, sanitizes (DOMPurify, no external references) and optimizes (svgo), stores the result under `brands/<id>/<kind>/<uuid>/<name>` and deletes the staged copy. Stale tickets and their staged files are swept automatically.
+
+Stored files are served with a 1-hour cache lifetime. On Supabase's free plan the CDN isn't purged when a file is deleted, so a deleted file can stay reachable at its old (unguessable) URL for up to an hour.
 
 ## Public preview (GitHub Pages, paused)
 
