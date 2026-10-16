@@ -1,8 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { FileRef, VariantAssets } from "./files";
+import type { FileRef, ImageRef, PngWidth } from "./files";
 
-export { PNG_WIDTHS, type FileRef, type ImageRef, type PngWidth, type VariantAssets } from "./files";
+export { PNG_WIDTHS, type FileRef, type ImageRef, type PngWidth } from "./files";
+
+/** The pipeline always renders an SVG (unlike admin uploads, which may be PNG-only). */
+export type VariantAssets = { svg: ImageRef; png: (ImageRef & { size: PngWidth })[] };
 
 export const MANIFEST_PATH = path.join(process.cwd(), ".generated", "manifest.json");
 

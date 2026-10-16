@@ -9,7 +9,7 @@ export type MenuItem =
 const itemClass = "motion-colors flex h-9 w-full items-center gap-2.5 rounded-[8px] px-2 text-left text-small outline-none hover:bg-hover focus-visible:bg-hover disabled:pointer-events-none disabled:opacity-50";
 
 /** Menu button (WAI-ARIA menu pattern): arrow keys, Home/End, Esc returns focus. */
-export function Menu({ label, trigger, items, align = "right" }: { label: string; trigger: ReactNode; items: MenuItem[]; align?: "left" | "right" }) {
+export function Menu({ label, trigger, items, align = "right", triggerClassName }: { label: string; trigger: ReactNode; items: MenuItem[]; align?: "left" | "right"; triggerClassName?: string }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -52,7 +52,7 @@ export function Menu({ label, trigger, items, align = "right" }: { label: string
         aria-controls={open ? id : undefined}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => e.key === "ArrowDown" && (e.preventDefault(), setOpen(true))}
-        className="motion-colors grid size-8 place-items-center rounded-[8px] text-muted hover:bg-hover hover:text-ink"
+        className={triggerClassName ?? "motion-colors grid size-8 place-items-center rounded-[8px] text-muted hover:bg-hover hover:text-ink"}
       >
         {trigger}
       </button>

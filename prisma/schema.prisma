@@ -60,6 +60,9 @@ model Brand {
   kitFileId        String?
   kitMode          KitMode     @default(AUTO)
   kitBuiltAt       DateTime?
+  /// Set when logos change; the zips and the kit are rebuilt in the background, then it's cleared.
+  /// A rebuild only clears it if it hasn't changed since the rebuild started.
+  assetsStaleAt    DateTime?
   /// Generated from the colors; never edited by hand.
   colorsCssFileId  String?
   colorsJsonFileId String?
@@ -194,6 +197,8 @@ model SiteSettings {
   contactEmail String  @default("brand@parselab.com")
   allKitFileId String?
   allKitMode   KitMode @default(AUTO)
+  /// Set when any public brand's kit changes; the "Download all" zip is rebuilt, then it's cleared.
+  allKitStaleAt DateTime?
   ogFileId     String?
 }
 

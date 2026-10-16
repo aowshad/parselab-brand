@@ -19,7 +19,8 @@ export type VariantView = {
   darkStage: boolean;
 };
 
-export type LogoGroupView = { key: string; label: string; description: string; zip: FileRef; variants: VariantView[] };
+/** `zip` is null while it's being rebuilt (the "Download all" button is hidden until then). */
+export type LogoGroupView = { key: string; label: string; description: string; zip: FileRef | null; variants: VariantView[] };
 
 /** A palette card: a solid color with its hex, or a gradient with one hex per stop. */
 export type ColorView = { name: string; role: string } & (

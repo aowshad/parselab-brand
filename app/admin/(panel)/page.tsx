@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Brands" };
 export const instant = false;
+export const maxDuration = 60; // status changes rebuild "Download all" after the response
 
 export default async function BrandsPage() {
   await requireAdmin();

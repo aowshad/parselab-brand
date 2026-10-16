@@ -1,5 +1,6 @@
 "use client";
 
+import { displayImage } from "@/lib/files";
 import type { VariantView } from "@/lib/view";
 import { SegmentedTabs } from "./SegmentedTabs";
 
@@ -29,7 +30,7 @@ export function VariantTabs({
         active={active}
         onSelect={onSelect}
       />
-      {current && <span className="ml-auto text-caption tabular-nums text-muted">{current.assets.svg.filename}</span>}
+      {current && <span className="ml-auto text-caption tabular-nums text-muted">{displayImage(current.assets).filename}</span>}
     </div>
   );
 }

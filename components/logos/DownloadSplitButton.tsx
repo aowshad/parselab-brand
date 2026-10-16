@@ -20,9 +20,12 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
   const focusOnOpen = useRef<"first" | "last" | null>(null);
   const menuId = useId();
   const { svg, png } = variant.assets;
+  // PNG-only logos: the main button downloads the largest PNG and the menu lists PNGs only.
+  const primary = svg ?? png.at(-1)!;
+  const primaryLabel = svg ? "Download SVG" : "Download PNG";
 
   const items = [
-    { file: svg, label: "SVG", detail: "Any size", a11y: `SVG, any size, ${formatSize(svg.sizeKb)}` },
+    ...(svg ? [{ file: svg, label: "SVG", detail: "Any size", a11y: `SVG, any size, ${formatSize(svg.sizeKb)}` }] : []),
     ...png.map((p) => ({
       file: p,
       label: `${p.size}px`,
@@ -104,15 +107,15 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
     <div ref={rootRef} className="relative">
       <div className="flex rounded-button shadow-pill">
         <DownloadLink
-          file={svg}
+          file={primary}
           feedback
           data-primary-download
           aria-keyshortcuts="D"
-          title="Download SVG (D)"
+          title={`${primaryLabel} (D)`}
           className={`motion-press inline-flex h-10 items-center gap-2 rounded-l-button pl-4 pr-3 text-small font-medium ${tone}`}
         >
           <Download aria-hidden className="size-4" />
-          Download SVG
+          {primaryLabel}
         </DownloadLink>
         <button
           ref={triggerRef}
@@ -142,7 +145,7 @@ export function DownloadSplitButton({ variant, onDark }: { variant: VariantView;
         >
           {items.map((item, i) => (
             <div key={item.file.filename}>
-              {i === 1 && (
+              {i === (svg ? 1 : 0) && (
                 <p aria-hidden className="mt-1 border-t border-hairline px-2 pb-1 pt-3 text-caption uppercase tracking-[0.06em] text-muted">
                   PNG · Transparent
                 </p>

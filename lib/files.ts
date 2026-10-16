@@ -10,4 +10,8 @@ export type PngWidth = (typeof PNG_WIDTHS)[number];
 export type FileRef = { path: string; filename: string; sizeKb: number; downloadUrl?: string };
 export type ImageRef = FileRef & { width: number; height: number };
 
-export type VariantAssets = { svg: ImageRef; png: (ImageRef & { size: PngWidth })[] };
+/** `svg` is null for PNG-only logos (the page then offers PNGs only). */
+export type VariantAssets = { svg: ImageRef | null; png: (ImageRef & { size: PngWidth })[] };
+
+/** What to show for a variant: its SVG, else its largest PNG. */
+export const displayImage = (a: VariantAssets): ImageRef => a.svg ?? a.png.at(-1)!;

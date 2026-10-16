@@ -2,13 +2,15 @@
 
 import { Grid2x2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { displayImage } from "@/lib/files";
 import { withBase } from "@/lib/paths";
 import type { VariantView } from "@/lib/view";
 import { DownloadSplitButton } from "./DownloadSplitButton";
 
 /** Box the logo is scaled into: at most 56% of the canvas width, centered. */
 function logoBox(v: VariantView) {
-  const wide = v.assets.svg.width / v.assets.svg.height >= 2;
+  const img = displayImage(v.assets);
+  const wide = img.width / img.height >= 2;
   const [x, y] = wide ? [22, 28] : [22, 18];
   return { left: `${x}%`, top: `${y}%`, width: `${100 - 2 * x}%`, height: `${100 - 2 * y}%` };
 }
@@ -73,11 +75,11 @@ export function LogoStage({
             return (
               <img
                 key={v.id}
-                src={withBase(v.assets.svg.path)}
+                src={withBase(displayImage(v.assets).path)}
                 alt={isActive ? `${brandName} ${groupLabel}, ${v.name}` : ""}
                 aria-hidden={!isActive}
-                width={v.assets.svg.width}
-                height={v.assets.svg.height}
+                width={displayImage(v.assets).width}
+                height={displayImage(v.assets).height}
                 ref={refFor(v.id)}
                 onLoad={() => mark(v.id)}
                 decoding="async"

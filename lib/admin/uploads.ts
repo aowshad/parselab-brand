@@ -16,6 +16,7 @@ export type Purpose = { kinds: Kind[]; maxBytes: number; label: string; square?:
 
 export const PURPOSES: Record<string, Purpose> = {
   "brand-icon": { kinds: ["svg", "png"], maxBytes: 5 * MB, label: "Brand icon", square: true },
+  "logo-variant": { kinds: ["svg", "png"], maxBytes: 5 * MB, label: "Logo" },
 };
 
 export const MIME: Record<Kind, string> = { svg: "image/svg+xml", png: "image/png" };

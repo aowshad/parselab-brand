@@ -113,16 +113,18 @@ export function LogoSection({ brandName, groups }: { brandName: string; groups: 
               </>
             )}
           />
-          <DownloadLink
-            file={group.zip}
-            feedback
-            aria-label={`Download all ${group.label} files, ZIP, ${formatSize(group.zip.sizeKb)}`}
-            className={buttonClass({ variant: "ghost", size: "sm" })}
-          >
-            <Download aria-hidden className="size-4" />
-            Download all
-            <span className="tabular-nums text-muted">· ZIP · {formatSize(group.zip.sizeKb)}</span>
-          </DownloadLink>
+          {group.zip && (
+            <DownloadLink
+              file={group.zip}
+              feedback
+              aria-label={`Download all ${group.label} files, ZIP, ${formatSize(group.zip.sizeKb)}`}
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+            >
+              <Download aria-hidden className="size-4" />
+              Download all
+              <span className="tabular-nums text-muted">· ZIP · {formatSize(group.zip.sizeKb)}</span>
+            </DownloadLink>
+          )}
         </div>
 
         <div id={VARIANT_PANEL_ID} role="tabpanel" aria-labelledby={variantTabId(variant.id)}>

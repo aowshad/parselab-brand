@@ -111,3 +111,25 @@ export async function deleteBrandFolder(brandId: string): Promise<number> {
   await db.fileObject.deleteMany({ where: { key: { startsWith: `${prefix}/` } } });
   return keys.length;
 }
+
+/**
+ * Gives a stored file a new download name: the object moves to `<same folder>/<new name>` (the
+ * name is also what browsers save SVGs as) and the FileObject follows.
+ */
+export async function renameFile(id: string, name: string): Promise<FileObject> {
+  const f = await db.fileObject.findUniqueOrThrow({ where: { id } });
+  if (f.name === name) return f;
+  const key = `${f.key.split("/").slice(0, -1).join("/")}/${safeName(name)}`;
+  const { error } = await bucket().copy(f.key, key);
+  if (error) throw new Error(`Storage rename failed: ${error.message}`);
+  const updated = await db.fileObject.update({ where: { id }, data: { key, name } });
+  await bucket().remove([f.key]);
+  return updated;
+}
+
+/** The bytes of a stored file (server-side, through the service key). */
+export async function readFile(f: Pick<FileObject, "key" | "name">): Promise<Buffer> {
+  const { data, error } = await bucket().download(f.key);
+  if (error || !data) throw new Error(`Couldn't read ${f.name} from storage: ${error?.message}`);
+  return Buffer.from(await data.arrayBuffer());
+}

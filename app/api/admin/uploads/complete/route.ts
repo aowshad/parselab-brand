@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     const base = ticket.fileName.replace(/\.[^.]*$/, "") || "file";
     const file = await storeFile({
       brandId: ticket.brandId,
-      kind: ticket.purpose === "brand-icon" ? "icon" : "uploads",
+      kind: ticket.purpose === "brand-icon" ? "icon" : ticket.purpose === "logo-variant" ? "logos" : "uploads",
       name: `${base}.${checked.kind}`,
       bytes: checked.bytes,
       mime: MIME[checked.kind],

@@ -7,6 +7,7 @@ import { getEditorBrand, type CardPreview } from "@/lib/admin/brands";
 import { requireAdmin } from "@/lib/auth/session";
 
 export const instant = false;
+export const maxDuration = 60;
 
 type Props = { params: Promise<{ id: string }> };
 

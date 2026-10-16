@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentAdmin } from "@/lib/auth/session";
 import { copyFile, deleteBrandFolder, deleteFiles } from "@/lib/admin/files";
+import { scheduleAllKitRebuild } from "@/lib/admin/rebuild";
 import { refreshPublic } from "@/lib/admin/revalidate";
 import { db } from "@/lib/db";
 import type { BrandStatus } from "@/lib/generated/prisma/client";
@@ -104,6 +105,8 @@ export async function setStatus(id: string, status: BrandStatus): Promise<Action
   if (!STATUSES.includes(status)) return { error: "Unknown status." };
   const brand = await db.brand.update({ where: { id }, data: { status }, select: { slug: true, name: true } });
   refreshPublic(brand.slug);
+  // Publishing or hiding a brand changes what "Download all" contains.
+  await scheduleAllKitRebuild();
   const label = { DRAFT: "Draft · hidden from the site", SOON: "Soon", LIVE: "Live" }[status];
   return { ok: `${brand.name}: ${label}` };
 }
@@ -183,6 +186,7 @@ export async function deleteBrand(id: string, confirmName: string): Promise<Acti
   // Files it pointed at outside its own folder (seeded ones, say), then everything in its folder.
   const removed = (await deleteFiles(files)) + (await deleteBrandFolder(id));
   refreshPublic(b.slug);
+  if (b.status !== "DRAFT") await scheduleAllKitRebuild();
   return { ok: `${b.name} deleted · ${removed} file${removed === 1 ? "" : "s"} removed` };
 }
 

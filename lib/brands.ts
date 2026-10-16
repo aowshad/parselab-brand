@@ -2,7 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { gradientCss, isDark } from "./color";
 import { db } from "./db";
-import type { FileRef, ImageRef, PngWidth } from "./files";
+import { displayImage, type FileRef, type ImageRef, type PngWidth } from "./files";
 import { BRAND_FONTS } from "./fonts";
 import type { BrandStatus, FileObject } from "./generated/prisma/client";
 import { typographySchema, type Typeface } from "./schema";
@@ -90,13 +90,17 @@ function fileIdsOf(b: BrandRow): (string | null)[] {
 function logoGroups(b: BrandRow, files: Files): LogoGroupView[] {
   return b.logoTypes
     .filter((t) => t.variants.length)
-    .map((t) => ({
+    .map((t) => {
+      const zip = optional(files, t.zipFileId);
+      return {
       key: t.key,
       label: t.label,
       description: t.description,
-      zip: fileRef(need(files, t.zipFileId, `${b.slug}/${t.key} zip`)),
-      variants: t.variants.map((v): VariantView => {
+      zip: zip ? fileRef(zip) : null,
+      // A variant needs an SVG or at least one PNG; one mid-upload (neither yet) is left out.
+      variants: t.variants.filter((v) => v.svgFileId || PNG_COLUMNS.some(([, col]) => v[col])).map((v): VariantView => {
         const id = variantPublicId(t.key, v.key);
+        const svg = optional(files, v.svgFileId);
         return {
           id,
           name: v.name,
@@ -105,7 +109,7 @@ function logoGroups(b: BrandRow, files: Files): LogoGroupView[] {
           dot: v.dot ?? v.previewBg,
           darkStage: isDark(v.previewBg),
           assets: {
-            svg: imageRef(need(files, v.svgFileId, `${b.slug}/${id} SVG`)),
+            svg: svg ? imageRef(svg) : null,
             png: PNG_COLUMNS.flatMap(([size, col]) => {
               const f = optional(files, v[col]);
               return f ? [{ ...imageRef(f), size: size as PngWidth }] : [];
@@ -113,7 +117,9 @@ function logoGroups(b: BrandRow, files: Files): LogoGroupView[] {
           },
         };
       }),
-    }));
+      };
+    })
+    .filter((g) => g.variants.length);
 }
 
 function colorViews(b: BrandRow): ColorView[] {
@@ -179,12 +185,12 @@ export async function getPublishedBrands(): Promise<BrandCardView[]> {
   cacheTag(CACHE_TAGS.brands);
 
   const brands = await db.brand.findMany({ where: { status: { in: PUBLIC } }, orderBy: { sortOrder: "asc" }, include: brandInclude });
-  const files = await loadFiles(brands.flatMap((b) => b.logoTypes.flatMap((t) => t.variants.map((v) => v.svgFileId))));
+  const files = await loadFiles(brands.flatMap((b) => b.logoTypes.flatMap((t) => t.variants.flatMap((v) => [v.svgFileId, v.png4096Id, v.png2048Id, v.png1024Id, v.png512Id]))));
 
   return brands.map((b) => {
     const groups = b.logoTypes.map((t) => ({
       key: t.key,
-      variants: t.variants.map((v) => ({ id: variantPublicId(t.key, v.key), previewBg: v.previewBg, svgFileId: v.svgFileId })),
+      variants: t.variants.map((v) => ({ id: variantPublicId(t.key, v.key), previewBg: v.previewBg, svgFileId: v.svgFileId ?? v.png4096Id ?? v.png2048Id ?? v.png1024Id ?? v.png512Id })),
     }));
     const thumb = (theme: Theme): CardThumb | null => {
       const pick = cardVariant(groups, theme);
@@ -238,7 +244,7 @@ export async function getBrandBySlug(slug: string): Promise<BrandView | null> {
     icon: iconFile
       ? { src: publicUrl(iconFile.key), isTile: true, plate: "transparent" }
       : first
-        ? { src: first.assets.svg.path, isTile: false, plate: first.previewBg }
+        ? { src: displayImage(first.assets).path, isTile: false, plate: first.previewBg }
         : null,
     counts: { variants: allVariants.length, colors: colors.length },
   };
