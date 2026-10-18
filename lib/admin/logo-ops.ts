@@ -1,27 +1,25 @@
-"use server";
-
-import { redirect } from "next/navigation";
-import { getCurrentAdmin } from "@/lib/auth/session";
+import "server-only";
 import { deleteFiles, readFile, renameFile, storeFile } from "@/lib/admin/files";
 import { scheduleRebuild } from "@/lib/admin/rebuild";
 import { pngsFromPng, pngsFromSvg } from "@/lib/admin/render";
-import { refreshPublic } from "@/lib/admin/revalidate";
+import { expirePublic } from "@/lib/admin/revalidate";
 import { defaultFileName, fileNameProblem, isSlot, SLOTS, TYPE_PRESETS } from "@/lib/admin/slots";
 import { svgSize } from "@/lib/admin/uploads";
 import { db } from "@/lib/db";
 import { slugify } from "@/lib/slug";
-import type { ActionResult } from "./actions";
+export type OpResult = { ok?: string; error?: string; id?: string };
 
 /*
- * Logos tab mutations. Each re-checks the session, refreshes the brand's public page, and queues
- * a background rebuild of the zips and kit (the editor shows "Rebuilding…" until it finishes).
+ * Logos tab operations, run by /api/admin/logos (which checks the session and origin). Each
+ * expires the brand's public page and queues a background rebuild of the zips and kit (the
+ * editor shows "Rebuilding…" until it finishes).
+ *
+ * Why a route and not server actions: on this page a server action's result could be dropped
+ * when Next refreshed the page after it (the save went through, but no confirmation arrived).
+ * A plain JSON response can't be dropped that way.
  */
 
 const PNG_COL = { 512: "png512Id", 1024: "png1024Id", 2048: "png2048Id", 4096: "png4096Id" } as const;
-
-async function admin() {
-  if (!(await getCurrentAdmin())) redirect("/admin/login");
-}
 
 async function typeWithBrand(typeId: string) {
   return db.logoType.findUnique({ where: { id: typeId }, include: { brand: { select: { id: true, slug: true } }, variants: true } });
@@ -33,13 +31,12 @@ const variantFiles = (v: { svgFileId: string | null; png512Id: string | null; pn
 
 async function changed(brandId: string, slug: string) {
   await scheduleRebuild(brandId);
-  refreshPublic(slug);
+  expirePublic(slug);
 }
 
 // ── Logo types ──────────────────────────────────────────────────────────────────────────
 
-export async function addLogoType(brandId: string, preset: string | null, customLabel?: string): Promise<ActionResult> {
-  await admin();
+export async function addLogoType(brandId: string, preset: string | null, customLabel?: string): Promise<OpResult> {
   const brand = await db.brand.findUnique({ where: { id: brandId }, select: { slug: true, logoTypes: { select: { key: true, sortOrder: true } } } });
   if (!brand) return { error: "This brand no longer exists." };
   const p = TYPE_PRESETS.find((t) => t.key === preset);
@@ -63,8 +60,7 @@ export async function addLogoType(brandId: string, preset: string | null, custom
   return { ok: `${label} added`, id: type.id };
 }
 
-export async function updateLogoType(typeId: string, label: string, description: string): Promise<ActionResult> {
-  await admin();
+export async function updateLogoType(typeId: string, label: string, description: string): Promise<OpResult> {
   const t = await typeWithBrand(typeId);
   if (!t) return { error: "This logo type no longer exists." };
   label = label.trim();
@@ -72,12 +68,11 @@ export async function updateLogoType(typeId: string, label: string, description:
   if (!label) return { error: "The label can't be empty." };
   if (label.length > 40 || description.length > 140) return { error: "Keep the label under 40 and the description under 140 characters." };
   await db.logoType.update({ where: { id: typeId }, data: { label, description } });
-  refreshPublic(t.brand.slug);
+  expirePublic(t.brand.slug);
   return { ok: "Saved" };
 }
 
-export async function reorderLogoTypes(brandId: string, ids: string[]): Promise<ActionResult> {
-  await admin();
+export async function reorderLogoTypes(brandId: string, ids: string[]): Promise<OpResult> {
   const types = await db.logoType.findMany({ where: { brandId }, select: { id: true } });
   if (ids.length !== types.length || !types.every((t) => ids.includes(t.id))) return { error: "The list changed. Reload and try again." };
   const brand = await db.brand.findUniqueOrThrow({ where: { id: brandId }, select: { slug: true } });
@@ -86,8 +81,7 @@ export async function reorderLogoTypes(brandId: string, ids: string[]): Promise<
   return { ok: "Order saved" };
 }
 
-export async function deleteLogoType(typeId: string): Promise<ActionResult> {
-  await admin();
+export async function deleteLogoType(typeId: string): Promise<OpResult> {
   const t = await typeWithBrand(typeId);
   if (!t) return { error: "This logo type no longer exists." };
   await db.logoType.delete({ where: { id: typeId } });
@@ -103,8 +97,7 @@ export async function deleteLogoType(typeId: string): Promise<ActionResult> {
  * stores it under the variant's download name, renders PNGs at 512–4096 px (an SVG) or the
  * standard widths up to its own (a PNG), and replaces whatever the slot held.
  */
-export async function attachVariant(typeId: string, slot: string, uploadedFileId: string): Promise<ActionResult> {
-  await admin();
+export async function attachVariant(typeId: string, slot: string, uploadedFileId: string): Promise<OpResult> {
   if (!isSlot(slot)) return { error: "Unknown variant." };
   const t = await typeWithBrand(typeId);
   if (!t) return { error: "This logo type no longer exists." };
@@ -156,8 +149,7 @@ export async function attachVariant(typeId: string, slot: string, uploadedFileId
   return { ok: `${defaults.name} ${existing ? "replaced" : "added"} · ${isSvg ? "SVG + " : ""}${stored.length} PNG${stored.length === 1 ? "" : "s"}` };
 }
 
-export async function updateVariant(variantId: string, fields: { fileName?: string; hint?: string }): Promise<ActionResult> {
-  await admin();
+export async function updateVariant(variantId: string, fields: { fileName?: string; hint?: string }): Promise<OpResult> {
   const v = await db.logoVariant.findUnique({ where: { id: variantId }, include: { logoType: { include: { brand: { select: { id: true, slug: true } } } } } });
   if (!v) return { error: "This variant no longer exists." };
   const brand = v.logoType.brand;
@@ -177,22 +169,24 @@ export async function updateVariant(variantId: string, fields: { fileName?: stri
     const clash = await db.logoVariant.findFirst({ where: { fileName, id: { not: v.id }, logoType: { brandId: brand.id } }, select: { id: true } });
     if (clash) return { error: "Another logo of this brand already uses that file name." };
     const stem = fileName.replace(/\.(svg|png)$/, "");
-    if (v.svgFileId) await renameFile(v.svgFileId, fileName);
-    for (const [size, col] of Object.entries(PNG_COL)) {
-      const id = v[col as keyof typeof v] as string | null;
-      if (id) await renameFile(id, `${stem}@${size}.png`);
-    }
+    // In parallel: each rename is a storage copy + delete.
+    await Promise.all([
+      v.svgFileId ? renameFile(v.svgFileId, fileName) : null,
+      ...Object.entries(PNG_COL).map(([size, col]) => {
+        const id = v[col as keyof typeof v] as string | null;
+        return id ? renameFile(id, `${stem}@${size}.png`) : null;
+      }),
+    ]);
     data.fileName = fileName;
   }
   if (!Object.keys(data).length) return { ok: "No changes" };
   await db.logoVariant.update({ where: { id: variantId }, data });
   if (data.fileName) await scheduleRebuild(brand.id); // file names inside the zips change
-  refreshPublic(brand.slug);
+  expirePublic(brand.slug);
   return { ok: data.fileName ? `Renamed to ${data.fileName}` : "Hint saved" };
 }
 
-export async function removeVariant(variantId: string): Promise<ActionResult> {
-  await admin();
+export async function removeVariant(variantId: string): Promise<OpResult> {
   const v = await db.logoVariant.findUnique({ where: { id: variantId }, include: { logoType: { include: { brand: { select: { id: true, slug: true } } } } } });
   if (!v) return { error: "This variant no longer exists." };
   await db.logoVariant.delete({ where: { id: variantId } });

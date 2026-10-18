@@ -59,16 +59,26 @@ async function waitRebuilt(timeoutMs = 90000) {
 let editorPath = "";
 const location = () => editorPath;
 async function upload(type, slot, file) {
+  // The result is a new error line in the cell, or a new "<slot> added · …" toast.
   const prevAlert = await page.$eval(`${cell(type, slot)} [role="alert"]`, (e) => e.textContent).catch(() => null);
+  const prevToast = await page.$eval("[data-toast-region]", (e) => e.textContent.trim()).catch(() => "");
   const input = await page.$(`${cell(type, slot)} input[type=file]`);
   await input.uploadFile(`${FIX}/${file}`);
   await page.waitForFunction(
-    (sel, prev) => { const a = document.querySelector(`${sel} [role="alert"]`)?.textContent; return (a && a !== prev) || /added|replaced/.test(document.querySelector("[data-toast-region]")?.textContent ?? ""); },
+    (sel, pa, pt) => {
+      const a = document.querySelector(`${sel} [role="alert"]`)?.textContent;
+      const t = document.querySelector("[data-toast-region]")?.textContent.trim() ?? "";
+      return (a && a !== pa) || (/(added|replaced) · /.test(t) && t !== pt);
+    },
     { timeout: 60000 },
     cell(type, slot),
     prevAlert,
+    prevToast,
   );
-  return page.evaluate((sel) => document.querySelector(`${sel} [role="alert"]`)?.textContent.trim() ?? document.querySelector("[data-toast-region]")?.textContent.trim(), cell(type, slot));
+  return page.evaluate((sel, pa) => {
+    const a = document.querySelector(`${sel} [role="alert"]`)?.textContent.trim();
+    return a && a !== pa ? a : document.querySelector("[data-toast-region]")?.textContent.trim();
+  }, cell(type, slot), prevAlert);
 }
 async function deleteTestBrand() {
   await go("/admin/", "tbody");
@@ -104,9 +114,9 @@ try {
   check((await page.$$("article[aria-label^='Full logo,']")).length === 4, "it shows the 2×2 grid: On dark, On light, Black, White");
 
   console.log("Uploads");
-  check((await upload("Full logo", "On light", "wordmark.svg")) === "On light added · SVG + 4 PNGs", "an SVG becomes the variant plus 4 PNGs");
-  check((await upload("Full logo", "On dark", "evil.svg")) === "SVG contains scripts and was rejected.", "an SVG with a script is rejected, in its cell");
-  check((await upload("Full logo", "Black", "black-1024.png")) === "Black added · 2 PNGs", "a PNG-only upload keeps the widths up to its own (512, 1024)");
+  { const r = await upload("Full logo", "On light", "wordmark.svg"); check(r === "On light added · SVG + 4 PNGs", `${"an SVG becomes the variant plus 4 PNGs"}${r === "On light added · SVG + 4 PNGs" ? "" : ` (saw "${r}")`}`); }
+  { const r = await upload("Full logo", "On dark", "evil.svg"); check(r === "SVG contains scripts and was rejected.", `${"an SVG with a script is rejected, in its cell"}${r === "SVG contains scripts and was rejected." ? "" : ` (saw "${r}")`}`); }
+  { const r = await upload("Full logo", "Black", "black-1024.png"); check(r === "Black added · 2 PNGs", `${"a PNG-only upload keeps the widths up to its own (512, 1024)"}${r === "Black added · 2 PNGs" ? "" : ` (saw "${r}")`}`); }
   await go(editorPath, cell("Full logo", "On light"));
   const meta = await page.$eval(cell("Full logo", "On light"), (c) => ({ text: c.textContent, file: c.querySelector('input[title="File name"]')?.value, src: c.querySelector("img")?.src, dl: c.querySelector("a[href*='download=']")?.href }));
   check(meta.file === `${SLUG}-full-light-bg.svg` && meta.src.endsWith(`/${SLUG}-full-light-bg.svg`), `file name filled in: ${meta.file}`);
@@ -142,7 +152,7 @@ try {
   await page.click('[role="menu"] ::-p-text(Mark)');
   await expectToast("Mark added", "add a second type");
   await page.waitForSelector(cell("Mark", "On light"));
-  check((await upload("Mark", "On light", "mark.svg")) === "On light added · SVG + 4 PNGs", "upload to the Mark");
+  { const r = await upload("Mark", "On light", "mark.svg"); check(r === "On light added · SVG + 4 PNGs", `${"upload to the Mark"}${r === "On light added · SVG + 4 PNGs" ? "" : ` (saw "${r}")`}`); }
   await go(editorPath, 'button[aria-label="Reorder Mark"]');
   await page.focus('button[aria-label="Reorder Mark"]');
   await page.keyboard.press("Space");
@@ -174,7 +184,7 @@ try {
   check(variants.join() === "On light,Black", `only uploaded variants appear: ${variants.join(", ")}`);
   await pub.click('[role="tablist"][aria-label$="variants"] ::-p-text(Black)');
   await wait(300);
-  check((await pub.$eval("[data-primary-download]", (a) => a.textContent.trim())).endsWith("Download PNG"), "a PNG-only variant offers Download PNG (no SVG)");
+  { const label = await pub.$eval("[data-primary-download]", (a) => a.textContent); check(label.includes("Download PNG") && !label.includes("SVG"), "a PNG-only variant offers Download PNG (no SVG)"); }
   const kitHref = await pub.$eval("body > header a[download]", (a) => a.href);
   const kitNames = await zipNames(kitHref);
   check(kitNames.includes(`svg/${SLUG}-wordmark.svg`) && kitNames.includes(`png/4096/${SLUG}-wordmark@4096.png`) && kitNames.includes(`png/1024/${SLUG}-full-black@1024.png`), `the brand kit has svg/ and png/<width>/ (${kitNames.length} files)`);
@@ -201,14 +211,21 @@ try {
   await page.click("dialog[open] button[type=submit]");
   await expectToast("Black removed · 2 files", "remove a variant (its files go too)");
   check(!(await inStorage(blackPng)), "the variant's PNG is gone from storage");
-  await page.click('ul[aria-label="Logo types"] li:first-child button:last-child');
-  await page.waitForSelector("::-p-text(Delete type)");
-  await page.click("::-p-text(Delete type)");
+  // Select Mark by name and wait for its panel, then delete it. (Scroll up first: otherwise the
+  // row can land under the sticky header and the header takes the click.)
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.click('ul[aria-label="Logo types"] li button:last-child ::-p-text(Mark)');
+  await page.waitForSelector('section[aria-label="Mark"]');
+  await page.click('section[aria-label="Mark"] ::-p-text(Delete type)');
   await page.waitForSelector("dialog[open] input");
   check(await page.$eval("dialog[open] button[type=submit]", (b) => b.disabled), "deleting a type with files needs its name typed");
   await page.type("dialog[open] input", "Mark");
   await page.click("dialog[open] button[type=submit]");
-  await expectToast("Mark deleted · 5 files removed", "delete a logo type and its SVG + 4 PNGs");
+  // Its SVG and 4 PNGs, plus its ZIP if that had been built yet.
+  {
+    const seen = await page.waitForFunction(() => { const t = document.querySelector("[data-toast-region]")?.textContent.trim(); return t && /deleted|Couldn|error|exist/i.test(t) ? t : false; }, { timeout: 30000 }).then((h) => h.jsonValue()).catch(() => "");
+    check(/^Mark deleted · [56] files removed$/.test(seen), `delete a logo type: its SVG, 4 PNGs (and ZIP)${/^Mark deleted/.test(seen) ? "" : ` (saw "${seen}")`}`);
+  }
 } finally {
   await deleteTestBrand().catch(() => {});
   await browser.close();

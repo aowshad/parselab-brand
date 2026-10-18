@@ -7,7 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Loader, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { addLogoType, deleteLogoType, reorderLogoTypes, updateLogoType } from "@/app/admin/brands/logo-actions";
+import { logoOp } from "@/lib/admin/logo-client";
 import type { EditorLogoType, LogoEditor } from "@/lib/admin/logos";
 import { isSlot, SLOTS, STANDARD_SLOTS, TILE_SLOTS, TYPE_PRESETS, type SlotKey } from "@/lib/admin/slots";
 import { formatSize } from "@/lib/format";
@@ -18,21 +18,35 @@ import { inputClass } from "../Form";
 import { Menu } from "../Menu";
 import { VariantCell } from "./VariantCell";
 
-export function LogosEditor({ editor, initialType }: { editor: LogoEditor; initialType?: string }) {
+export function LogosEditor({ editor }: { editor: LogoEditor }) {
   const [types, setTypes] = useState(editor.types);
-  const [selectedId, setSelectedId] = useState(() => initialType ?? editor.types[0]?.id ?? null);
+  const [rebuilding, setRebuilding] = useState(editor.rebuilding);
+  useEffect(() => setRebuilding(editor.rebuilding), [editor.rebuilding]);
+  const [selectedId, setSelectedId] = useState(() => editor.types[0]?.id ?? null);
+  // ?type=<id> selects that logo type (it's kept in the URL as you switch).
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("type");
+    if (t) setSelectedId(t);
+  }, []);
   const [custom, setCustom] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const toast = useToast();
   const router = useRouter();
 
   useEffect(() => setTypes(editor.types), [editor.types]);
-  // While the zips rebuild in the background, refresh until they're done.
+  // While the zips rebuild in the background, poll a tiny status URL and update just the ZIP
+  // lines. Never a page refresh here: it would cancel a save that's still in flight.
   useEffect(() => {
-    if (!editor.rebuilding) return;
-    const t = setInterval(() => router.refresh(), 2000);
+    if (!rebuilding) return;
+    const t = setInterval(async () => {
+      const r = await fetch(`/api/admin/brands/${editor.brandId}/status/`, { cache: "no-store" }).then((x) => x.json()).catch(() => null);
+      if (!r || r.rebuilding) return;
+      clearInterval(t);
+      setTypes((ts) => ts.map((x) => (x.id in r.zips ? { ...x, zip: r.zips[x.id] } : x)));
+      setRebuilding(false);
+    }, 2000);
     return () => clearInterval(t);
-  }, [editor.rebuilding, router]);
+  }, [rebuilding, editor.brandId]);
 
   const selected = types.find((t) => t.id === selectedId) ?? types[0];
   const select = (id: string) => {
@@ -49,7 +63,7 @@ export function LogosEditor({ editor, initialType }: { editor: LogoEditor; initi
     const next = arrayMove(types, types.findIndex((t) => t.id === active.id), types.findIndex((t) => t.id === over.id));
     setTypes(next);
     start(async () => {
-      const r = await reorderLogoTypes(editor.brandId, next.map((t) => t.id));
+      const r = await logoOp("reorderTypes", { brandId: editor.brandId, ids: next.map((t) => t.id) });
       if (r.error) {
         setTypes(before);
         toast(r.error, "error");
@@ -62,7 +76,7 @@ export function LogosEditor({ editor, initialType }: { editor: LogoEditor; initi
 
   const add = (preset: string | null, label?: string) =>
     start(async () => {
-      const r = await addLogoType(editor.brandId, preset, label);
+      const r = await logoOp("addType", { brandId: editor.brandId, preset, label });
       toast(r.ok ?? r.error!, r.error ? "error" : "success");
       if (r.id) {
         setCustom(null);
@@ -122,7 +136,7 @@ export function LogosEditor({ editor, initialType }: { editor: LogoEditor; initi
       </div>
 
       {selected ? (
-        <TypePanel key={selected.id} brandId={editor.brandId} type={selected} rebuilding={editor.rebuilding} />
+        <TypePanel key={selected.id} brandId={editor.brandId} type={selected} rebuilding={rebuilding} />
       ) : (
         <div className="grid place-items-center rounded-card border border-dashed border-control p-10 text-center text-small text-muted">Add a logo type to start uploading.</div>
       )}
@@ -168,7 +182,7 @@ function TypePanel({ brandId, type, rebuilding }: { brandId: string; type: Edito
         onSubmit={(e) => {
           e.preventDefault();
           start(async () => {
-            const r = await updateLogoType(type.id, label, description);
+            const r = await logoOp("updateType", { typeId: type.id, label, description });
             toast(r.ok ?? r.error!, r.error ? "error" : "success");
             if (r.ok) router.refresh();
           });
@@ -234,7 +248,7 @@ function TypePanel({ brandId, type, rebuilding }: { brandId: string; type: Edito
         onClose={() => setConfirm(false)}
         onConfirm={() =>
           start(async () => {
-            const r = await deleteLogoType(type.id);
+            const r = await logoOp("deleteType", { typeId: type.id });
             toast(r.ok ?? r.error!, r.error ? "error" : "success");
             setConfirm(false);
             router.replace(window.location.pathname);

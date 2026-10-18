@@ -1,7 +1,24 @@
 import { BrandCard } from "@/components/home/BrandCard";
 import { Footer } from "@/components/shell/Footer";
 import { HomeTopBar } from "@/components/shell/TopBar";
+import type { Metadata } from "next";
 import { getPublishedBrands, getSiteSettings } from "@/lib/brands";
+import { withBase } from "@/lib/paths";
+
+/** The site-wide link-preview image (kept out of the root layout; see app/layout.tsx). */
+export async function generateMetadata(): Promise<Metadata> {
+  const { og, homeTitle, homeSubtitle } = await getSiteSettings();
+  return {
+    openGraph: {
+      type: "website",
+      siteName: "ParseLab Brand",
+      title: homeTitle,
+      description: homeSubtitle,
+      images: og ? [{ url: withBase(og.path), width: 1200, height: 630 }] : [],
+    },
+    twitter: { card: "summary_large_image" },
+  };
+}
 
 export default async function Home() {
   const [site, brands] = await Promise.all([getSiteSettings(), getPublishedBrands()]);

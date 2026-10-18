@@ -1,10 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getEditorBrand } from "@/lib/admin/brands";
 import { requireAdmin } from "@/lib/auth/session";
-
-export const instant = false;
 
 /** Tabs whose editors arrive in later phases. Until then: what the brand has, and where to see it. */
 const UPCOMING: Record<string, { title: string; phase: string; what: (c: { logos: number; colors: number; typefaces: number }) => string; anchor: string }> = {
@@ -14,15 +11,11 @@ const UPCOMING: Record<string, { title: string; phase: string; what: (c: { logos
   kit: { title: "Brand kit", phase: "Phase 5", what: (c) => (c.logos ? "Built automatically from the logos and colors" : "No kit until there are logos"), anchor: "logos" },
 };
 
-type Props = { params: Promise<{ id: string; tab: string }> };
+export const upcomingTitle = (tab: string) => UPCOMING[tab]?.title ?? "Brand";
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return { title: UPCOMING[(await params).tab]?.title ?? "Brand" };
-}
-
-export default async function UpcomingTab({ params }: Props) {
+/** Placeholder for a brand editor tab whose editor is still to come. */
+export async function UpcomingTab({ id, tab }: { id: string; tab: string }) {
   await requireAdmin();
-  const { id, tab } = await params;
   const info = UPCOMING[tab];
   const brand = info ? await getEditorBrand(id) : null;
   if (!info || !brand) notFound();

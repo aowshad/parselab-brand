@@ -3,7 +3,7 @@
 import { Download, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
-import { attachVariant, removeVariant, updateVariant } from "@/app/admin/brands/logo-actions";
+import { logoOp } from "@/lib/admin/logo-client";
 import type { EditorVariant } from "@/lib/admin/logos";
 import { SLOTS, type SlotKey } from "@/lib/admin/slots";
 import { uploadFile } from "@/lib/admin/upload-client";
@@ -35,7 +35,7 @@ export function VariantCell({ brandId, typeId, typeLabel, slot, variant }: { bra
     try {
       const up = await uploadFile(file, { purpose: "logo-variant", brandId }, (p) => setPhase(p < 1 ? { step: "upload", progress: p } : { step: "process" }));
       setPhase({ step: "process" });
-      const r = await attachVariant(typeId, slot, up.fileId);
+      const r = await logoOp("attach", { typeId, slot, fileId: up.fileId });
       if (r.error) throw new Error(r.error);
       toast(r.ok!);
       router.refresh();
@@ -95,8 +95,8 @@ export function VariantCell({ brandId, typeId, typeLabel, slot, variant }: { bra
         </div>
         {variant ? (
           <>
-            <InlineField key={`f-${variant.fileName}`} label="File name" value={variant.fileName} onSave={(v) => updateVariant(variant.id, { fileName: v })} />
-            <InlineField key={`h-${variant.hint}`} label="Usage hint" value={variant.hint} onSave={(v) => updateVariant(variant.id, { hint: v })} />
+            <InlineField label="File name" value={variant.fileName} onSave={(v) => logoOp("updateVariant", { variantId: variant.id, fileName: v })} />
+            <InlineField label="Usage hint" value={variant.hint} onSave={(v) => logoOp("updateVariant", { variantId: variant.id, hint: v })} />
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               <label htmlFor={inputId} className={buttonClass({ variant: "ghost", size: "sm", className: `cursor-pointer ${busy ? "pointer-events-none opacity-50" : ""}` })}>
                 Replace
@@ -128,7 +128,7 @@ export function VariantCell({ brandId, typeId, typeLabel, slot, variant }: { bra
         onClose={() => setConfirm(false)}
         onConfirm={() =>
           start(async () => {
-            const r = await removeVariant(variant!.id);
+            const r = await logoOp("removeVariant", { variantId: variant!.id });
             toast(r.ok ?? r.error!, r.error ? "error" : "success");
             setConfirm(false);
             router.refresh();
@@ -145,23 +145,24 @@ export function VariantCell({ brandId, typeId, typeLabel, slot, variant }: { bra
 function InlineField({ label, value, onSave }: { label: string; value: string; onSave: (v: string) => Promise<{ ok?: string; error?: string }> }) {
   const [v, setV] = useState(value);
   const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
+  const [pending, setPending] = useState(false);
   const toast = useToast();
   const router = useRouter();
   const id = useId();
   useEffect(() => setV(value), [value]);
-  const save = () => {
+  // A plain async call (not a transition): the action's response refreshes the page itself.
+  const save = async () => {
     if (v.trim() === value || pending) return setV(value);
-    start(async () => {
+    setPending(true);
+    try {
       const r = await onSave(v.trim());
-      if (r.error) {
-        setError(r.error);
-        return;
-      }
+      if (r.error) return setError(r.error);
       setError(null);
       toast(r.ok!);
       router.refresh();
-    });
+    } finally {
+      setPending(false);
+    }
   };
   return (
     <div>

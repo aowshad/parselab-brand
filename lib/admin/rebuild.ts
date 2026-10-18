@@ -1,7 +1,8 @@
 import "server-only";
 import { revalidateTag } from "next/cache";
+import { headers } from "next/headers";
 import { after } from "next/server";
-import { CACHE_TAGS } from "../brands";
+import { CACHE_TAGS } from "../cache-tags";
 import { db } from "../db";
 import type { FileObject } from "../generated/prisma/client";
 import { deleteFiles, storeFile } from "./files";
@@ -135,14 +136,37 @@ export async function rebuildAllKit(): Promise<void> {
   revalidateTag(CACHE_TAGS.settings, { expire: 0 });
 }
 
+/**
+ * After the response is sent, ask our own /api/internal/rebuild route to do the work: a route
+ * handler may expire the public cache (revalidateTag), code running after a server action may
+ * not. after() keeps the function alive until that request finishes.
+ */
+async function runInBackground(body: { brandId?: string }) {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
+  after(async () => {
+    try {
+      const res = await fetch(`${proto}://${host}/api/internal/rebuild/`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${process.env.CRON_SECRET}` },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) console.error("Background rebuild failed:", res.status, await res.text());
+    } catch (e) {
+      console.error("Background rebuild failed:", e);
+    }
+  });
+}
+
 /** Marks a brand's zips stale and rebuilds them after the response is sent. */
 export async function scheduleRebuild(brandId: string) {
   await db.$executeRaw`UPDATE "Brand" SET "assetsStaleAt" = ${new Date()} WHERE "id" = ${brandId}`;
-  after(() => rebuildBrand(brandId).catch((e) => console.error(`Rebuild failed for ${brandId}:`, e)));
+  await runInBackground({ brandId });
 }
 
 /** For changes that only affect "Download all" (a brand published, hidden or deleted). */
 export async function scheduleAllKitRebuild() {
   await markAllKitStale();
-  after(() => rebuildAllKit().catch((e) => console.error("Download-all rebuild failed:", e)));
+  await runInBackground({});
 }

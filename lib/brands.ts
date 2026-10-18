@@ -1,5 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
+import { CACHE_TAGS } from "./cache-tags";
 import { gradientCss, isDark } from "./color";
 import { db } from "./db";
 import { displayImage, type FileRef, type ImageRef, type PngWidth } from "./files";
@@ -16,11 +17,7 @@ import type { BrandCardView, BrandView, CardThumb, ColorView, LogoGroupView, Pub
  * save expires exactly what it changed: `brands` (home + every brand page), `brand:<slug>`, or
  * `settings`. DRAFT brands never leave this file.
  */
-export const CACHE_TAGS = {
-  brands: "brands",
-  brand: (slug: string) => `brand:${slug}`,
-  settings: "settings",
-} as const;
+export { CACHE_TAGS };
 
 const PUBLIC: BrandStatus[] = ["SOON", "LIVE"];
 const toPublic = (s: BrandStatus): PublicStatus => (s === "LIVE" ? "live" : "soon");

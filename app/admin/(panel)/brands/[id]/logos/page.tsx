@@ -8,16 +8,18 @@ export const instant = false;
 // Attaching a logo renders four PNGs, and the zips rebuild after the response: allow up to 60 s.
 export const maxDuration = 60;
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ type?: string }> };
+type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const e = await getLogoEditor((await params).id);
   return { title: e ? `${e.name} · Logos` : "Logos" };
 }
 
-export default async function LogosTab({ params, searchParams }: Props) {
+// The selected type (?type=) is read in the browser: reading searchParams here made a router
+// refresh of this page fall back to a full reload, which cancelled saves in flight.
+export default async function LogosTab({ params }: Props) {
   await requireAdmin();
-  const [editor, { type }] = await Promise.all([getLogoEditor((await params).id), searchParams]);
+  const editor = await getLogoEditor((await params).id);
   if (!editor) notFound();
-  return <LogosEditor editor={editor} initialType={type} />;
+  return <LogosEditor editor={editor} />;
 }

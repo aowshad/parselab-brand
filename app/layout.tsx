@@ -1,15 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { ToastProvider } from "@/components/ui/Toast";
-import { getSiteSettings } from "@/lib/brands";
 import { withBase } from "@/lib/paths";
 import { THEME_SCRIPT } from "@/lib/theme-script";
 import "./globals.css";
 
 const DESCRIPTION = "Logos, colors and guidelines for every ParseLab product.";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const { og } = await getSiteSettings();
+/**
+ * Shared by every page, admin included, so it reads no cached data: if it did, a background
+ * rebuild expiring that data would invalidate an admin page mid-save and force a full reload.
+ * Public pages add their own link-preview images (app/page.tsx, app/[brand]/page.tsx).
+ */
+export function generateMetadata(): Metadata {
   return {
     // Absolute URLs for link previews. Set SITE_URL (e.g. https://brand.parselab.com) when deploying.
     metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000"),
@@ -21,7 +24,6 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: "ParseLab Brand",
       title: "Brand assets",
       description: DESCRIPTION,
-      images: og ? [{ url: withBase(og.path), width: 1200, height: 630 }] : [],
     },
     twitter: { card: "summary_large_image" },
   };
