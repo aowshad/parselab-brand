@@ -41,6 +41,7 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - `pnpm test:e2e`: every page, file and download works, and the interactive pieces (theme, logo tabs, copy, downloads) behave.
 - `pnpm test:auth`: admin guards, sign-in and lockout, account changes, sessions and `admin:reset`. Needs the seeded `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env.local`; it changes them during the run and always puts them back.
 - `pnpm test:admin`: the Brands list and General tab end to end (creates and deletes a test brand "ProductsModel"), including upload checks and the upload API's security.
+- `pnpm test:logos`: the Logos tab end to end on a temporary brand "LogoTest": uploads, rejections, PNG-only, renames, reordering, the public page, the kit and "Download all" contents, removal.
 - `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
 
 ## Admin
@@ -60,7 +61,15 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - **General tab:** name, URL slug (lowercase, unique, not a reserved word such as `admin` or `api`), tagline, status, accent color, brand icon, and a preview of the home card in both themes. Changing the slug can keep a redirect from the old URL; old URLs can be removed later. Unsaved changes show a save bar and ask before you leave.
 - **Delete** (Danger zone or row menu) needs the brand's name typed exactly, and removes everything in its storage folder. **Duplicate** copies a brand, files included, as a Draft.
 - Every save expires exactly the public pages it touched (`updateTag`), so the site shows it on the next visit.
-- The Logos, Colors, Typography, Usage and Brand kit tabs get their editors in the next phases.
+- The Colors, Typography, Usage and Brand kit tabs get their editors in the next phase.
+
+### Logos (`/admin/brands/<id>/logos/`)
+
+- **Logo types:** add a preset (Full logo, Mark, Icon, Square, Circle) or a custom one; rename it, describe it, drag to reorder (the public tabs follow), delete it (typing its name when it has files).
+- **Variants:** each type is a 2×2 grid of On dark, On light, Black and White, plus optional Brand color and Dark tiles for icons and avatars. Drop or pick an SVG or PNG (up to 5 MB) per slot; Replace, Download, Remove.
+- **What an upload becomes:** an SVG is sanitized and optimized, stored under its download name (`<brand>-<type>-<variant>.svg`, editable) and rendered to transparent PNGs at 512, 1024, 2048 and 4096 px (sharp). A PNG-only upload keeps the standard widths up to its own and the public page offers "Download PNG" instead of SVG.
+- **Rebuilds:** every change marks the brand stale; after the response, `/api/internal/rebuild` (server-only, `CRON_SECRET`) rebuilds each type's zip, the brand kit (Auto mode) and "Download all" (public brands), deletes the old zips and expires the public cache. The editor shows "Rebuilding…" until it's done. Overlapping changes are safe: a rebuild only clears the flag if nothing changed while it ran.
+- Logo operations go through `POST /api/admin/logos` (session + same origin) rather than server actions: on this page Next's refresh after an action could drop the action's result.
 
 ### Uploads
 
