@@ -12,6 +12,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "assets": "tsx scripts/build-assets.ts",
+    "favicons": "tsx scripts/build-favicons.ts",
     "validate": "tsx scripts/validate-content.ts",
     "test:e2e": "node tests/e2e/links.mjs && node tests/e2e/smoke.mjs",
     "test:parity": "node tests/e2e/parity.mjs",

@@ -14,11 +14,18 @@ const DESCRIPTION = "Logos, colors and guidelines for every ParseLab product.";
  */
 export function generateMetadata(): Metadata {
   return {
-    // Absolute URLs for link previews. Set SITE_URL (e.g. https://brand.parselab.com) when deploying.
-    metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000"),
+    // Absolute URLs for link previews: SITE_URL for a custom domain, else Vercel's production domain.
+    metadataBase: new URL(process.env.SITE_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000")),
     title: { default: "Brand assets", template: "%s — Brand assets" },
     description: DESCRIPTION,
-    icons: { icon: withBase("/favicon.svg") },
+    // The ParseLab mark (pnpm favicons). The .ico comes first so browsers that read SVG pick the SVG.
+    icons: {
+      icon: [
+        { url: withBase("/favicon.ico"), sizes: "48x48" },
+        { url: withBase("/favicon.svg"), type: "image/svg+xml" },
+      ],
+      apple: withBase("/apple-touch-icon.png"),
+    },
     openGraph: {
       type: "website",
       siteName: "ParseLab Brand",
