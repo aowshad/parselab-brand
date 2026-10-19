@@ -14,7 +14,7 @@ The database password, the service-role key and the admin password have been sha
 
 ## Vercel project
 
-Import the GitHub repo (`aowshad/parselab-brand`) in Vercel, or run `npx vercel link` here. Framework: Next.js. No build settings to change: `pnpm install` runs `prisma generate`, then `next build`.
+Import the GitHub repo (`aowshad/parselab-brand`) in Vercel, or run `npx vercel link` here. Framework: Next.js. No build settings to change: `pnpm build` runs `prisma generate`, then `next build`. (Generating in the build, not only after install: Vercel restores a dependency cache, and then install scripts don't run.)
 
 Environment variables (Production):
 
