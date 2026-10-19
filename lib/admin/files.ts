@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { db } from "../db";
 import type { FileObject } from "../generated/prisma/client";
+import { usageFileIds } from "../usage";
 import { bucket } from "./storage";
 
 /** Letters, digits, `.`, `-`, `_` and `@` only: no slashes, no traversal. */
@@ -59,12 +60,12 @@ export async function copyFile(id: string, toBrandId: string): Promise<FileObjec
 /** Every FileObject id some brand, logo, variant or the site settings still points at. */
 export async function referencedFileIds(): Promise<Set<string>> {
   const [brands, types, variants, site] = await Promise.all([
-    db.brand.findMany({ select: { iconFileId: true, kitFileId: true, colorsCssFileId: true, colorsJsonFileId: true, ogFileId: true } }),
+    db.brand.findMany({ select: { iconFileId: true, kitFileId: true, colorsCssFileId: true, colorsJsonFileId: true, ogFileId: true, usage: true } }),
     db.logoType.findMany({ select: { zipFileId: true } }),
     db.logoVariant.findMany({ select: { svgFileId: true, png512Id: true, png1024Id: true, png2048Id: true, png4096Id: true } }),
     db.siteSettings.findMany({ select: { allKitFileId: true, ogFileId: true } }),
   ]);
-  const ids = [...brands, ...types, ...variants, ...site].flatMap((row) => Object.values(row));
+  const ids = [...brands.map(({ usage, ...b }) => ({ ...b, usage: usageFileIds(usage) })), ...types, ...variants, ...site].flatMap((row) => Object.values(row).flat());
   return new Set(ids.filter((v): v is string => typeof v === "string"));
 }
 

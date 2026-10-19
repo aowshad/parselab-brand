@@ -43,6 +43,7 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - `pnpm test:admin`: the Brands list and General tab end to end (creates and deletes a test brand "ProductsModel"), including upload checks and the upload API's security.
 - `pnpm test:colors`: the Colors tab end to end on a temporary brand "ColorTest": shorthand hex, gradients, edits, reordering, the public cards and the generated files.
 - `pnpm test:typography`: the Typography tab on a temporary brand "TypeTest": Coming soon, publishing a typeface, the headings/body rule, weights.
+- `pnpm test:usage`: the Usage tab on a temporary brand "UsageTest": Markdown, the safety rules, Do / Don't images, clean-up.
 - `pnpm test:logos`: the Logos tab end to end on a temporary brand "LogoTest": uploads, rejections, PNG-only, renames, reordering, the public page, the kit and "Download all" contents, removal.
 - `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
 
@@ -76,6 +77,12 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - "Show as Coming soon" (the default) or up to 4 typefaces: family, what it sets (headings, body or both), its role label, weights and where to get it, previewed in the real font. At least one typeface must set the headings and one the body text.
 - Families are self-hosted, so the list is what `lib/fonts.ts` loads and `lib/font-catalog.ts` describes; adding one is a developer change to both. No monospace families.
 - The type scale is shared by every brand ([`lib/typography.ts`](lib/typography.ts)) and previewed with the chosen faces.
+
+### Usage (`/admin/brands/<id>/usage/`)
+
+- "Show as Coming soon" (the default), or written guidelines in Markdown (Write / Preview) plus up to 12 Do / Don't pairs, each side an image (SVG, PNG, JPEG or WebP, up to 5 MB) and a caption.
+- The public page renders the Markdown safely: no raw HTML, no images from Markdown (only the uploaded Do / Don't ones), and links to other sites open in a new tab with `rel="noopener noreferrer"`.
+- Images taken out of a pair are deleted from storage on save; duplicating a brand copies them.
 
 ### Logos (`/admin/brands/<id>/logos/`)
 

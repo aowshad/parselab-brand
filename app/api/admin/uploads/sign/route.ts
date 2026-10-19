@@ -5,7 +5,7 @@ import { getCurrentAdmin } from "@/lib/auth/session";
 import { safeName } from "@/lib/admin/files";
 import { bucket } from "@/lib/admin/storage";
 import { sweepTickets } from "@/lib/admin/tickets";
-import { MB, MIME, PURPOSES } from "@/lib/admin/uploads";
+import { MB, MIME, MIME_ALIASES, PURPOSES } from "@/lib/admin/uploads";
 import { db } from "@/lib/db";
 
 /**
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   if (!Number.isFinite(size) || size <= 0) return NextResponse.json({ error: "That file is empty." }, { status: 400 });
   if (size > purpose.maxBytes) return NextResponse.json({ error: `File is over ${purpose.maxBytes / MB} MB.` }, { status: 413 });
   const declared = String(body.type ?? "");
-  const allowed: string[] = purpose.kinds.map((k) => MIME[k]);
+  const allowed: string[] = purpose.kinds.flatMap((k) => [MIME[k], ...MIME_ALIASES[k]]);
   if (declared && !allowed.includes(declared)) {
     return NextResponse.json({ error: `Upload ${purpose.kinds.map((k) => k.toUpperCase()).join(" or ")} only.` }, { status: 415 });
   }

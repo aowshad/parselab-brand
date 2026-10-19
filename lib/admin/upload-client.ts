@@ -9,7 +9,7 @@ export async function uploadFile(
   file: File,
   opts: { purpose: string; brandId?: string },
   onProgress?: (fraction: number) => void,
-): Promise<{ fileId: string; width: number; height: number; kind: string }> {
+): Promise<{ fileId: string; url: string; width: number; height: number; kind: string }> {
   const sign = await fetch("/api/admin/uploads/sign/", {
     method: "POST",
     headers: { "content-type": "application/json" },

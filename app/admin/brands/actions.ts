@@ -8,6 +8,7 @@ import { refreshPublic } from "@/lib/admin/revalidate";
 import { db } from "@/lib/db";
 import type { BrandStatus } from "@/lib/generated/prisma/client";
 import { MAX_SLUG, slugify, slugProblem } from "@/lib/slug";
+import type { UsageData } from "@/lib/usage";
 
 /*
  * Brand mutations. Each one re-checks the session, validates on the server (the forms only hint),
@@ -134,6 +135,19 @@ export async function duplicateBrand(id: string): Promise<ActionResult> {
   const newId = crypto.randomUUID();
   const copy = async (fid: string | null) => (fid ? (await copyFile(fid, newId)).id : null);
   const last = await db.brand.aggregate({ _max: { sortOrder: true } });
+  // Usage images are copied too, so the copy keeps working if the original is deleted.
+  const srcUsage = src.usage as UsageData | null;
+  const usage = srcUsage
+    ? {
+        markdown: srcUsage.markdown,
+        pairs: await Promise.all(
+          srcUsage.pairs.map(async (p) => ({
+            do: { ...p.do, fileId: await copy(p.do.fileId) },
+            dont: { ...p.dont, fileId: await copy(p.dont.fileId) },
+          })),
+        ),
+      }
+    : undefined;
 
   const logoTypes = [];
   for (const t of src.logoTypes) {
@@ -163,7 +177,7 @@ export async function duplicateBrand(id: string): Promise<ActionResult> {
       colorsJsonFileId: await copy(src.colorsJsonFileId),
       ogFileId: await copy(src.ogFileId),
       typography: src.typography ?? undefined,
-      usage: src.usage ?? undefined,
+      usage,
       logoTypes: { create: logoTypes },
       colors: { create: src.colors.map(({ id: _i, brandId: _b, gradient, ...c }) => ({ ...c, gradient: gradient ?? undefined })) },
     },

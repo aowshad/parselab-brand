@@ -20,7 +20,8 @@
     "test:admin": "node tests/e2e/admin-brands.mjs",
     "test:logos": "node tests/e2e/admin-logos.mjs",
     "test:colors": "node tests/e2e/admin-colors.mjs",
-    "test:typography": "node tests/e2e/admin-typography.mjs"
+    "test:typography": "node tests/e2e/admin-typography.mjs",
+    "test:usage": "node tests/e2e/admin-usage.mjs"
   },
   "packageManager": "pnpm@12.8.1",
   "type": "module",
@@ -40,6 +41,8 @@
     "next": "^16.3.7",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "server-only": "^0.0.1",
     "sharp": "^0.35.5",
     "zod": "^4.6.5"

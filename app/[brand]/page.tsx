@@ -9,6 +9,7 @@ import { Footer } from "@/components/shell/Footer";
 import { TocChips, TocSidebar, type TocItem } from "@/components/shell/Toc";
 import { BrandTopBar } from "@/components/shell/TopBar";
 import { TypographySection } from "@/components/typography/TypographySection";
+import { UsageSection } from "@/components/usage/UsageSection";
 import { getBrandBySlug, getPublishedSlugs, getRedirectTarget, getSiteSettings } from "@/lib/brands";
 import { withBase } from "@/lib/paths";
 import { RevealOnScroll } from "@/components/shell/RevealOnScroll";
@@ -55,7 +56,7 @@ export default async function BrandPage({ params }: Props) {
     { id: "logos", label: "Logos", ...(variants ? { count: variants } : { soon: true }) },
     { id: "colors", label: "Colors", ...(colors ? { count: colors } : { soon: true }) },
     { id: "typography", label: "Typography", ...(brand.typography ? { count: brand.typography.typefaces.length } : { soon: true }) },
-    { id: "usage", label: "Usage guidelines", soon: true },
+    { id: "usage", label: "Usage guidelines", ...(brand.usage ? {} : { soon: true }) },
   ];
 
   return (
@@ -94,7 +95,11 @@ export default async function BrandPage({ params }: Props) {
             </Section>
 
             <Section id="usage" title="Usage guidelines" subtitle="Clear space, minimum sizes, do's and don'ts.">
-              <ComingSoonCard icon={BookOpen} text="Clear space, minimum sizes and do's and don'ts will be published here." />
+              {brand.usage ? (
+                <UsageSection usage={brand.usage} />
+              ) : (
+                <ComingSoonCard icon={BookOpen} text="Clear space, minimum sizes and do's and don'ts will be published here." />
+              )}
             </Section>
 
           </div>

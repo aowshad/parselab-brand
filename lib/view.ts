@@ -36,6 +36,9 @@ export type TypographyView = { typefaces: TypefaceView[]; scale: (Omit<ScaleStep
 
 export type PublicStatus = "live" | "soon";
 
+/** Usage guidelines, with each Do / Don't image resolved to its URL. */
+export type UsageView = { markdown: string; pairs: { do: { src: string | null; caption: string }; dont: { src: string | null; caption: string } }[] };
+
 export type BrandView = {
   slug: string;
   name: string;
@@ -47,6 +50,8 @@ export type BrandView = {
   contact: string;
   /** Null until the brand names its typefaces: the section shows "Coming soon". */
   typography: TypographyView | null;
+  /** Null shows "Coming soon". */
+  usage: UsageView | null;
   logoGroups: LogoGroupView[];
   palettes: PaletteView[];
   /** Null until the brand has logos: hide every "Download kit" button. */

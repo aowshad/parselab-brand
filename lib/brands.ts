@@ -9,8 +9,9 @@ import type { BrandStatus, FileObject } from "./generated/prisma/client";
 import { typographySchema, type Typeface } from "./schema";
 import { downloadUrl, publicUrl } from "./storage-url";
 import { typeScale } from "./typography";
+import { usageFileIds, type UsageData } from "./usage";
 import { cardVariant, type Theme } from "./variants";
-import type { BrandCardView, BrandView, CardThumb, ColorView, LogoGroupView, PublicStatus, SiteView, TypographyView, VariantView } from "./view";
+import type { BrandCardView, BrandView, CardThumb, ColorView, LogoGroupView, PublicStatus, SiteView, TypographyView, UsageView, VariantView } from "./view";
 
 /*
  * The public site's one data layer. Every read is cached ('use cache') and tagged, so an admin
@@ -213,7 +214,13 @@ export async function getBrandBySlug(slug: string): Promise<BrandView | null> {
 
   const b = await loadBrandRow(slug);
   if (!b) return null;
-  const [files, site] = await Promise.all([loadFiles(fileIdsOf(b)), getSiteSettings()]);
+  const [files, site] = await Promise.all([loadFiles([...fileIdsOf(b), ...usageFileIds(b.usage)]), getSiteSettings()]);
+  const u = b.usage as UsageData | null;
+  const sideView = (x: { fileId: string | null; caption: string }) => {
+    const f = optional(files, x.fileId);
+    return { src: f ? publicUrl(f.key) : null, caption: x.caption };
+  };
+  const usage: UsageView | null = u ? { markdown: u.markdown, pairs: u.pairs.map((p) => ({ do: sideView(p.do), dont: sideView(p.dont) })) } : null;
 
   const groups = logoGroups(b, files);
   const colors = colorViews(b);
@@ -233,6 +240,7 @@ export async function getBrandBySlug(slug: string): Promise<BrandView | null> {
     updatedAt: isoDate(b.updatedAt),
     contact: site.contact,
     typography: typographyView(b),
+    usage,
     logoGroups: groups,
     palettes: colors.length ? [{ name: "Main palette", colors }] : [],
     kit: kit && groups.length ? fileRef(kit) : null,
