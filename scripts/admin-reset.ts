@@ -41,10 +41,13 @@ async function main() {
     const admin = await db.admin.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
     if (!admin) throw new Error(`No admin with the email ${email}.`);
 
-    const piped = process.stdin.isTTY ? undefined : readline.createInterface({ input: process.stdin })[Symbol.asyncIterator]();
+    const reader = process.stdin.isTTY ? undefined : readline.createInterface({ input: process.stdin });
+    const piped = reader?.[Symbol.asyncIterator]();
     const password = await ask("New password (12+ characters): ", piped);
+    const again = await ask("Type it again: ", piped);
+    reader?.close();
     if (password.length < MIN_PASSWORD) throw new Error(`Password must be at least ${MIN_PASSWORD} characters.`);
-    if ((await ask("Type it again: ", piped)) !== password) throw new Error("The passwords don't match. Nothing changed.");
+    if (again !== password) throw new Error("The passwords don't match. Nothing changed.");
 
     await db.admin.update({ where: { id: admin.id }, data: { passwordHash: await hash(password) } });
     const { count } = await db.session.deleteMany({ where: { adminId: admin.id } });
@@ -54,7 +57,11 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error(`✗ ${e instanceof Error ? e.message : e}`);
-  process.exitCode = 1;
-});
+// Exit explicitly: an open stdin reader or the database pool would otherwise keep the process
+// alive after the work is done (and anything waiting on it, like a test, would wait forever).
+main()
+  .catch((e) => {
+    console.error(`✗ ${e instanceof Error ? e.message : e}`);
+    process.exitCode = 1;
+  })
+  .finally(() => process.exit(process.exitCode ?? 0));
