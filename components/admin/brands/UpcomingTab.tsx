@@ -5,7 +5,6 @@ import { requireAdmin } from "@/lib/auth/session";
 
 /** Tabs whose editors arrive in later phases. Until then: what the brand has, and where to see it. */
 const UPCOMING: Record<string, { title: string; phase: string; what: (c: { logos: number; colors: number; typefaces: number }) => string; anchor: string }> = {
-  colors: { title: "Colors", phase: "Phase 5", what: (c) => `${c.colors} colors`, anchor: "colors" },
   typography: { title: "Typography", phase: "Phase 5", what: (c) => (c.typefaces ? `${c.typefaces} typeface${c.typefaces === 1 ? "" : "s"}` : "Coming soon on the site"), anchor: "typography" },
   usage: { title: "Usage", phase: "Phase 5", what: () => "Coming soon on the site", anchor: "usage" },
   kit: { title: "Brand kit", phase: "Phase 5", what: (c) => (c.logos ? "Built automatically from the logos and colors" : "No kit until there are logos"), anchor: "logos" },

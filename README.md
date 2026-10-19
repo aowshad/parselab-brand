@@ -41,6 +41,7 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - `pnpm test:e2e`: every page, file and download works, and the interactive pieces (theme, logo tabs, copy, downloads) behave.
 - `pnpm test:auth`: admin guards, sign-in and lockout, account changes, sessions and `admin:reset`. Needs the seeded `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env.local`; it changes them during the run and always puts them back.
 - `pnpm test:admin`: the Brands list and General tab end to end (creates and deletes a test brand "ProductsModel"), including upload checks and the upload API's security.
+- `pnpm test:colors`: the Colors tab end to end on a temporary brand "ColorTest": shorthand hex, gradients, edits, reordering, the public cards and the generated files.
 - `pnpm test:logos`: the Logos tab end to end on a temporary brand "LogoTest": uploads, rejections, PNG-only, renames, reordering, the public page, the kit and "Download all" contents, removal.
 - `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
 
@@ -62,6 +63,12 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - **Delete** (Danger zone or row menu) needs the brand's name typed exactly, and removes everything in its storage folder. **Duplicate** copies a brand, files included, as a Draft.
 - Every save expires exactly the public pages it touched (`updateTag`), so the site shows it on the next visit.
 - The Colors, Typography, Usage and Brand kit tabs get their editors in the next phase.
+
+### Colors (`/admin/brands/<id>/colors/`)
+
+- Add or edit a color in the side panel: role, name, and either **Solid** (picker or hex, 3 or 6 digits, `#` optional; optional CMYK and Pantone) or **Gradient** (angle and 2–5 stops). RGB and HSL are always calculated, never typed.
+- Drag to reorder; a live preview shows the same cards as the public page.
+- `colors.css` and `colors.json` are generated from the list on every change (never edited by hand), and the brand kit is rebuilt to include them.
 
 ### Logos (`/admin/brands/<id>/logos/`)
 
