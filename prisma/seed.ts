@@ -214,4 +214,8 @@ main()
     console.error(`\n✗ ${err instanceof Error ? err.message : err}`);
     process.exitCode = 1;
   })
-  .finally(() => db.$disconnect());
+  // Exit explicitly: open storage keep-alive sockets otherwise hold the process for minutes.
+  .finally(async () => {
+    await db.$disconnect();
+    process.exit(process.exitCode ?? 0);
+  });

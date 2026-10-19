@@ -1,0 +1,107 @@
+{
+  "slug": "mudron",
+  "name": "Mudron",
+  "description": "we print your dream",
+  "status": "live",
+  "order": 5,
+  "updatedAt": "2026-10-19",
+  "contact": "brand@parselab.com",
+  "ogLogo": "full-light-bg",
+  "logoGroups": [
+    {
+      "key": "full",
+      "label": "Full logo",
+      "description": "Mark, wordmark and tagline in one line. The default logo.",
+      "variants": [
+        {
+          "id": "full-light-bg",
+          "name": "On light",
+          "file": "full-light-bg.svg",
+          "previewBg": "#FFFFFF",
+          "dot": "#FFFFFF",
+          "usage": "Primary lockup for white and light surfaces. Use this one by default."
+        }
+      ]
+    },
+    {
+      "key": "stacked",
+      "label": "Stacked",
+      "description": "Mark above the wordmark and tagline, for square and centered layouts.",
+      "variants": [
+        {
+          "id": "stacked-light-bg",
+          "name": "On light",
+          "file": "stacked-light-bg.svg",
+          "previewBg": "#FFFFFF",
+          "dot": "#FFFFFF",
+          "usage": "For posters, packaging and splash screens where the logo sits centered."
+        }
+      ]
+    },
+    {
+      "key": "mark",
+      "label": "Mark",
+      "description": "The spectrum M on its own, for tight spaces.",
+      "variants": [
+        {
+          "id": "mark-light-bg",
+          "name": "On light",
+          "file": "mark-light-bg.svg",
+          "previewBg": "#FFFFFF",
+          "dot": "#FFFFFF",
+          "usage": "Use when the wordmark appears nearby or space is too tight for the full logo."
+        }
+      ]
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "description": "App icon and favicon tile.",
+      "variants": [
+        {
+          "id": "icon-brand",
+          "name": "Brand color",
+          "file": "icon-brand.svg",
+          "previewBg": "#F3F4F6",
+          "dot": "#4D2A7C",
+          "usage": "App listings, favicons and anywhere the brand needs a self-contained tile."
+        }
+      ]
+    }
+  ],
+  "palettes": [
+    {
+      "name": "Main palette",
+      "colors": [
+        {
+          "name": "Spectrum",
+          "role": "Brand gradient",
+          "gradient": {
+            "angle": 90,
+            "stops": [
+              { "hex": "#EB2127", "at": 0 },
+              { "hex": "#F47E20", "at": 20 },
+              { "hex": "#F3EB16", "at": 40 },
+              { "hex": "#0D8140", "at": 65 },
+              { "hex": "#7F459A", "at": 100 }
+            ]
+          }
+        },
+        { "name": "Mudron Purple", "role": "Wordmark", "hex": "#4D2A7C" },
+        { "name": "Black", "role": "Tagline", "hex": "#000000" },
+        { "name": "White", "role": "Backgrounds", "hex": "#FFFFFF" }
+      ]
+    },
+    {
+      "name": "Spectrum",
+      "colors": [
+        { "name": "Red", "role": "Spectrum", "hex": "#EB2127" },
+        { "name": "Orange", "role": "Spectrum", "hex": "#F47E20" },
+        { "name": "Yellow", "role": "Spectrum", "hex": "#F3EB16" },
+        { "name": "Green", "role": "Spectrum", "hex": "#0D8140" },
+        { "name": "Blue", "role": "Spectrum", "hex": "#3952A4" },
+        { "name": "Violet", "role": "Spectrum", "hex": "#7F459A" }
+      ]
+    }
+  ]
+}
