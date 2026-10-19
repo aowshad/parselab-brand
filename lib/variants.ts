@@ -3,6 +3,10 @@
  * `icon-black`, `full-white`…). Anything else (`icon-brand`, `square-dark`…) is a self-contained
  * tile that works on any background. Pure, so server and client code can share it.
  */
+/** Variant keys as they appear in public ids and file names: on-dark → dark-bg, on-light → light-bg. */
+const LEGACY_SUFFIX: Record<string, string> = { "on-dark": "dark-bg", "on-light": "light-bg" };
+export const variantPublicId = (typeKey: string, variantKey: string) => `${typeKey}-${LEGACY_SUFFIX[variantKey] ?? variantKey}`;
+
 export type Tone = "on-light" | "on-dark" | "black" | "white" | "any";
 export type Theme = "light" | "dark";
 

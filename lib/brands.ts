@@ -10,7 +10,7 @@ import { typographySchema, type Typeface } from "./schema";
 import { downloadUrl, publicUrl } from "./storage-url";
 import { typeScale } from "./typography";
 import { usageFileIds, type UsageData } from "./usage";
-import { cardVariant, type Theme } from "./variants";
+import { cardVariant, variantPublicId, type Theme } from "./variants";
 import type { BrandCardView, BrandView, CardThumb, ColorView, LogoGroupView, PublicStatus, SiteView, TypographyView, UsageView, VariantView } from "./view";
 
 /*
@@ -52,9 +52,7 @@ const optional = (files: Files, id: string | null | undefined) => (id ? files.ge
 
 // ── Mapping ────────────────────────────────────────────────────────────────────────────
 
-/** Variant keys as they appear in public ids and file names: on-dark → dark-bg, on-light → light-bg. */
-const LEGACY_SUFFIX: Record<string, string> = { "on-dark": "dark-bg", "on-light": "light-bg" };
-export const variantPublicId = (typeKey: string, variantKey: string) => `${typeKey}-${LEGACY_SUFFIX[variantKey] ?? variantKey}`;
+export { variantPublicId };
 
 const PNG_COLUMNS = [
   [512, "png512Id"],

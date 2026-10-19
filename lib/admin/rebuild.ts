@@ -5,14 +5,17 @@ import { after } from "next/server";
 import { CACHE_TAGS } from "../cache-tags";
 import { db } from "../db";
 import type { FileObject } from "../generated/prisma/client";
+import { cardVariant, variantPublicId } from "../variants";
 import { deleteFiles, storeFile } from "./files";
+import { OG, brandOgPng } from "./og";
 import { bucket } from "./storage";
 import { zipBuffer } from "./zip";
 
 /*
  * Background rebuilds of the zips: each logo type's, the brand kit (Auto mode) and the site-wide
- * "Download all". A change marks the brand stale and schedules a rebuild with after(), so the
- * admin's save returns at once; the editor shows "Rebuilding…" until the flag clears.
+ * "Download all", plus the brand's link-preview image. A change marks the brand stale and
+ * schedules a rebuild with after(), so the admin's save returns at once; the editor shows
+ * "Rebuilding…" until the flag clears.
  *
  * Safe to run concurrently: a rebuild commits its zips only if nothing changed while it ran (the
  * stale stamp is the one it started from). Otherwise it deletes what it built: the change that
@@ -96,6 +99,27 @@ async function colorEntries(b: BrandForZips, files: Map<string, FileObject>, get
   return Promise.all(wanted.map(async (f) => ({ name: `${prefix}${f.name}`, bytes: await get(f) })));
 }
 
+/**
+ * The link preview, from the logo the home card shows in light mode (Full logo, else Icon) on its
+ * own background. Null without logos: the brand page then uses the site-wide preview.
+ */
+async function buildOg(b: BrandForZips, files: Map<string, FileObject>, get: Get): Promise<FileObject | null> {
+  const source = (v: BrandForZips["logoTypes"][number]["variants"][number]) => {
+    const svg = v.svgFileId ? files.get(v.svgFileId) : undefined;
+    if (svg) return { file: svg, svg: true };
+    const png = [v.png4096Id, v.png2048Id, v.png1024Id, v.png512Id].map((id) => (id ? files.get(id) : undefined)).find(Boolean);
+    return png ? { file: png, svg: false } : null;
+  };
+  const groups = b.logoTypes
+    .map((t) => ({ key: t.key, variants: t.variants.filter((v) => source(v)).map((v) => ({ id: variantPublicId(t.key, v.key), previewBg: v.previewBg, row: v })) }))
+    .filter((g) => g.variants.length);
+  const pick = cardVariant(groups, "light");
+  if (!pick) return null;
+  const src = source(pick.variant.row)!;
+  const bytes = await brandOgPng({ bytes: await get(src.file), svg: src.svg }, pick.variant.previewBg);
+  return storeFile({ brandId: b.id, kind: "og", name: `${b.slug}-og.png`, bytes, mime: "image/png", width: OG.width, height: OG.height });
+}
+
 /** README.txt at the top of every automatic brand kit. */
 function kitReadme(b: BrandForZips, files: number, colors: boolean): string {
   const types = b.logoTypes.filter((t) => t.variants.length).map((t) => `  - ${t.label}: ${t.variants.map((v) => v.name).join(", ")}`);
@@ -150,13 +174,14 @@ export async function rebuildBrand(brandId: string): Promise<void> {
         })
       : null;
   }
-  const built = [...typeZips.map((t) => t.zip?.id), kit?.id];
+  const og = await buildOg(b, files, get);
+  const built = [...typeZips.map((t) => t.zip?.id), kit?.id, og?.id];
 
   // Commit, unless something changed meanwhile (that change has its own rebuild queued).
   const committed = await db.$transaction(async (tx) => {
     const current = await tx.$executeRaw`UPDATE "Brand" SET "assetsStaleAt" = NULL WHERE "id" = ${brandId} AND "assetsStaleAt" = ${stamp}`;
     if (!current) return null;
-    const before = await tx.brand.findUnique({ where: { id: brandId }, select: { kitFileId: true, kitMode: true, logoTypes: { select: { id: true, zipFileId: true } } } });
+    const before = await tx.brand.findUnique({ where: { id: brandId }, select: { kitFileId: true, kitMode: true, ogFileId: true, logoTypes: { select: { id: true, zipFileId: true } } } });
     if (!before) return null;
     const replaced: (string | null)[] = [];
     for (const t of typeZips) {
@@ -170,6 +195,8 @@ export async function rebuildBrand(brandId: string): Promise<void> {
       await tx.$executeRaw`UPDATE "Brand" SET "kitFileId" = ${kit?.id ?? null}, "kitBuiltAt" = ${kit ? new Date() : null} WHERE "id" = ${brandId}`;
       replaced.push(before.kitFileId);
     }
+    await tx.$executeRaw`UPDATE "Brand" SET "ogFileId" = ${og?.id ?? null} WHERE "id" = ${brandId}`;
+    replaced.push(before.ogFileId);
     return replaced;
   });
 

@@ -1,5 +1,6 @@
 // Phase 4: the Logos tab end to end, on a temporary brand "LogoTest" (deleted at the end).
 import fs from "node:fs";
+import sharp from "sharp";
 import { BASE, check, done, launch, wait } from "./lib.mjs";
 
 process.loadEnvFile(".env.local");
@@ -200,6 +201,22 @@ try {
     if (!all.some((n) => n.startsWith(`${SLUG}/`))) await wait(2000);
   }
   check(all.some((n) => n === `${SLUG}/svg/${SLUG}-wordmark.svg`) && all.some((n) => n.startsWith("parselab/")), `Download all now includes ${NAME} (${all.length} files)`);
+
+  console.log("Link preview");
+  const ogUrl = (await (await fetch(`${BASE}/${SLUG}/`)).text()).match(/<meta property="og:image" content="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
+  check(ogUrl && /\/brands\/[^/]+\/og\/[0-9a-f-]{36}\//.test(ogUrl) && ogUrl.includes(`/${SLUG}-og.png`), "the brand gets its own preview image (not the site-wide one)");
+  if (ogUrl) {
+    const img = sharp(Buffer.from(await (await fetch(ogUrl)).arrayBuffer()));
+    const { width, height } = await img.metadata();
+    const { channels } = await img.stats();
+    check(width === 1200 && height === 630 && channels.some((c) => c.stdev > 5), `it's 1200×630 and shows the logo (${width}×${height})`);
+  }
+  const ogFiles = (await (await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/list/brand-assets`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY },
+    body: JSON.stringify({ prefix: `brands/${id}/og/`, limit: 100 }),
+  })).json()).length;
+  check(ogFiles === 1, `rebuilds replace the preview instead of piling them up (${ogFiles} in storage)`);
 
   console.log("Remove");
   await go(editorPath, "section");
