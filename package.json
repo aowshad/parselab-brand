@@ -19,7 +19,8 @@
     "test:auth": "node tests/e2e/auth.mjs",
     "test:admin": "node tests/e2e/admin-brands.mjs",
     "test:logos": "node tests/e2e/admin-logos.mjs",
-    "test:colors": "node tests/e2e/admin-colors.mjs"
+    "test:colors": "node tests/e2e/admin-colors.mjs",
+    "test:typography": "node tests/e2e/admin-typography.mjs"
   },
   "packageManager": "pnpm@12.8.1",
   "type": "module",

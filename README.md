@@ -42,6 +42,7 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - `pnpm test:auth`: admin guards, sign-in and lockout, account changes, sessions and `admin:reset`. Needs the seeded `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env.local`; it changes them during the run and always puts them back.
 - `pnpm test:admin`: the Brands list and General tab end to end (creates and deletes a test brand "ProductsModel"), including upload checks and the upload API's security.
 - `pnpm test:colors`: the Colors tab end to end on a temporary brand "ColorTest": shorthand hex, gradients, edits, reordering, the public cards and the generated files.
+- `pnpm test:typography`: the Typography tab on a temporary brand "TypeTest": Coming soon, publishing a typeface, the headings/body rule, weights.
 - `pnpm test:logos`: the Logos tab end to end on a temporary brand "LogoTest": uploads, rejections, PNG-only, renames, reordering, the public page, the kit and "Download all" contents, removal.
 - `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
 
@@ -69,6 +70,12 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - Add or edit a color in the side panel: role, name, and either **Solid** (picker or hex, 3 or 6 digits, `#` optional; optional CMYK and Pantone) or **Gradient** (angle and 2–5 stops). RGB and HSL are always calculated, never typed.
 - Drag to reorder; a live preview shows the same cards as the public page.
 - `colors.css` and `colors.json` are generated from the list on every change (never edited by hand), and the brand kit is rebuilt to include them.
+
+### Typography (`/admin/brands/<id>/typography/`)
+
+- "Show as Coming soon" (the default) or up to 4 typefaces: family, what it sets (headings, body or both), its role label, weights and where to get it, previewed in the real font. At least one typeface must set the headings and one the body text.
+- Families are self-hosted, so the list is what `lib/fonts.ts` loads and `lib/font-catalog.ts` describes; adding one is a developer change to both. No monospace families.
+- The type scale is shared by every brand ([`lib/typography.ts`](lib/typography.ts)) and previewed with the chosen faces.
 
 ### Logos (`/admin/brands/<id>/logos/`)
 

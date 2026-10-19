@@ -10,30 +10,9 @@ import { buttonClass } from "../../ui/Button";
 import { useToast } from "../../ui/Toast";
 import { Field, inputClass, SubmitButton, TextInput } from "../Form";
 import { STATUS_HELP, STATUS_LABEL, type Status } from "../StatusSelect";
+import { useLeaveGuard } from "../useLeaveGuard";
 
 type Values = { name: string; slug: string; tagline: string; status: Status; accent: string };
-
-/** Asks before leaving with unsaved changes: closing the tab, or clicking an in-app link. */
-function useLeaveGuard(dirty: boolean) {
-  useEffect(() => {
-    if (!dirty) return;
-    const beforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
-    const onClick = (e: MouseEvent) => {
-      const a = (e.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
-      if (!a || a.target === "_blank" || e.defaultPrevented || e.metaKey || e.ctrlKey) return;
-      if (!window.confirm("You have unsaved changes. Leave without saving?")) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    window.addEventListener("beforeunload", beforeUnload);
-    document.addEventListener("click", onClick, true);
-    return () => {
-      window.removeEventListener("beforeunload", beforeUnload);
-      document.removeEventListener("click", onClick, true);
-    };
-  }, [dirty]);
-}
 
 export function GeneralForm({ brand }: { brand: EditorBrand }) {
   const initial: Values = { name: brand.name, slug: brand.slug, tagline: brand.tagline, status: brand.status, accent: brand.accent ?? "" };

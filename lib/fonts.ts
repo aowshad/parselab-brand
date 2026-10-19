@@ -12,7 +12,7 @@ const dmSerif = DM_Serif_Display({ subsets: ["latin"], weight: "400", display: "
 const montserrat = Montserrat({ subsets: ["latin"], display: "swap", preload: false });
 const outfit = Outfit({ subsets: ["latin"], display: "swap", preload: false });
 
-/** Family name in brand.json → the CSS font-family stack that renders it. */
+/** Family name → the CSS font-family stack that renders it. Keep in step with lib/font-catalog.ts. */
 export const BRAND_FONTS: Record<string, string> = {
   Geist: GeistSans.style.fontFamily,
   "Plus Jakarta Sans": plusJakarta.style.fontFamily,
@@ -21,3 +21,5 @@ export const BRAND_FONTS: Record<string, string> = {
   Montserrat: montserrat.style.fontFamily,
   Outfit: outfit.style.fontFamily,
 };
+
+export { FONT_SOURCES, FONT_WEIGHTS } from "./font-catalog";
