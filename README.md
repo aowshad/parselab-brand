@@ -112,9 +112,9 @@ Files go straight from the browser to storage, never through the app server: `PO
 
 Stored files are served with a 1-hour cache lifetime. On Supabase's free plan the CDN isn't purged when a file is deleted, so a deleted file can stay reachable at its old (unguessable) URL for up to an hour.
 
-## Public preview (GitHub Pages, paused)
+## Deploying
 
-**https://aowshad.github.io/parselab-brand/** serves the last static build. The site now needs the database, so [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) only runs manually; the site moves to Vercel when the admin panel goes live.
+The site runs on Vercel with Supabase; see [DEPLOY.md](DEPLOY.md) for setup, environment variables, the daily keep-alive and the security checklist. The old GitHub Pages copy (https://aowshad.github.io/parselab-brand/) is no longer updated.
 
 ## Sharing and shortcuts
 

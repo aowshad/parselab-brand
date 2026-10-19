@@ -13,6 +13,26 @@ const nextConfig: NextConfig = {
   // Native modules (prebuilt binaries): load them from node_modules instead of bundling them.
   serverExternalPackages: ["@node-rs/argon2", "sharp"],
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
+        // The admin can't be framed (clickjacking) and is never cached by browsers or proxies.
+        source: "/admin/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
