@@ -62,5 +62,5 @@ Never run `prisma migrate reset` or `db:seed --force` against it: that is the li
 - [x] Database tables have row-level security on and no access for Supabase's public roles; the service key is server-only.
 - [x] `/api/internal/rebuild/` and `/api/cron/keepalive/` need `CRON_SECRET`.
 - [x] Headers: `nosniff` and a strict referrer policy everywhere; the admin can't be framed and isn't cached; admin pages are `noindex`.
-- [ ] Exposed secrets replaced (above).
+- [x] Exposed secrets replaced (above): database password, a new secret key with the legacy keys disabled, and the admin password.
 - [ ] GitHub Pages turned off (repo → Settings → Pages → *Unpublish*); its workflow has been removed, but github.io keeps serving the old static copy until then.
