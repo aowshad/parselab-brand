@@ -1,0 +1,84 @@
+# Builds and tests every push and pull request, the way Vercel builds and runs the site, so a
+# change that would break production fails here (and GitHub emails the author).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch replaces a run still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # The public pages are prerendered from the database at build time. Read-only use: the
+      # suites below never sign in or change anything.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_BUCKET: brand-assets
+      CHROME_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          # Its pnpm cache would run before corepack provides pnpm (next step).
+          package-manager-cache: false
+
+      # pnpm's version comes from "packageManager" in package.json.
+      - run: corepack enable
+
+      # Like Vercel with a warm cache: install scripts don't run, so the build must not rely on them.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Seed data is valid
+        run: pnpm validate
+
+      - name: Build (Prisma client, type check, prerender)
+        run: pnpm build
+
+      - name: Start like Vercel's runtime (ES modules can't be require()d)
+        run: |
+          export SESSION_SECRET="$(openssl rand -base64 32)" CRON_SECRET="$(openssl rand -hex 32)"
+          NODE_OPTIONS=--no-experimental-require-module nohup pnpm start -p 4173 > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:4173/ && exit 0; sleep 1; done
+          echo "The server didn't start"; exit 1
+
+      - name: Routes and guards
+        run: |
+          status() {
+            got=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:4173$1")
+            echo "$1 → $got (want $2)"
+            [ "$got" = "$2" ]
+          }
+          status / 200
+          status /parselab/ 200
+          status /nope/ 404
+          status /favicon.ico 200
+          status /admin/ 307
+          status /api/admin/me/ 401
+          # Loads the upload sanitizer (jsdom): a module Vercel's runtime can't load shows up as 500.
+          status /api/cron/keepalive/ 401
+
+      - name: Smoke test
+        run: node tests/e2e/smoke.mjs
+
+      - name: Every page, file and download
+        run: node tests/e2e/links.mjs
+
+      - name: Server log
+        if: failure()
+        run: tail -n 200 server.log

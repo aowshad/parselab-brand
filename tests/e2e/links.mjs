@@ -1,13 +1,15 @@
 // Crawls every public page: each linked or embedded file must load, assets must come from
 // Supabase Storage, and downloads must save under their real file name.
-import { BASE, BRANDS, check, done, launch, open, revealAll } from "./lib.mjs";
+import { BASE, check, done, launch, open, publishedBrands, revealAll } from "./lib.mjs";
 
 const STORAGE = process.env.STORAGE_ORIGIN ?? "https://gthtvjnxmfsgitvnsvor.supabase.co";
 const browser = await launch();
 const refs = new Map(); // url -> "download" | "inline"
 const failed = new Set();
 
-for (const path of ["/", ...BRANDS.map((b) => `/${b}/`)]) {
+const brands = await publishedBrands();
+check(brands.length >= 5, `the home page lists ${brands.length} brands: ${brands.join(", ")}`);
+for (const path of ["/", ...brands.map((b) => `/${b}/`)]) {
   const page = await open(browser, BASE + path);
   page.on("requestfailed", (r) => failed.add(r.url()));
   page.on("response", (r) => r.status() >= 400 && failed.add(`${r.status()} ${r.url()}`));

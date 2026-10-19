@@ -2,13 +2,21 @@
 import puppeteer from "puppeteer-core";
 
 export const BASE = process.env.BASE_URL ?? "http://localhost:4173";
+/** The brands in the old static build: what the parity test compares against. */
 export const BRANDS = ["parselab", "optionia", "inkybay", "jewelslab", "quotend"];
+/** Every brand the home page links to right now (brands added in the admin included). */
+export async function publishedBrands() {
+  const html = await (await fetch(`${BASE}/`)).text();
+  return [...new Set([...html.matchAll(/href="\/([a-z0-9-]+)\/"/g)].map((m) => m[1]))];
+}
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const CHROME = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 /** Headless Chrome pinned to a light OS (tests that need dark set it themselves). */
-export const launch = () => puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--blink-settings=preferredColorScheme=1"] });
+// On GitHub's Ubuntu runners Chrome's sandbox can't start (AppArmor), so CI runs without it.
+export const launch = () =>
+  puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--blink-settings=preferredColorScheme=1", ...(process.env.CI ? ["--no-sandbox"] : [])] });
 
 let failures = 0;
 export function check(ok, msg) {
