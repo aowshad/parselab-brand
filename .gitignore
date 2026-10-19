@@ -17,3 +17,4 @@ lib/generated/
 
 # Browser test output
 test-results/
+.vercel

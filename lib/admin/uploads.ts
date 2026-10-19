@@ -1,7 +1,12 @@
 import "server-only";
-import DOMPurify from "isomorphic-dompurify";
+import createDOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
 import sharp from "sharp";
 import { optimize } from "svgo";
+
+// jsdom is pinned to 26: from 27.1 it require()s an ESM-only package, which Vercel's Node runtime
+// refuses (ERR_REQUIRE_ESM), so every upload failed in production. Check that before upgrading.
+const DOMPurify = createDOMPurify(new JSDOM("").window as unknown as Window & typeof globalThis);
 
 /*
  * What an uploaded file may be, and how it's checked. The browser's file name and type are only
