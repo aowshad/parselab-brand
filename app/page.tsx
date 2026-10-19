@@ -5,10 +5,11 @@ import type { Metadata } from "next";
 import { getPublishedBrands, getSiteSettings } from "@/lib/brands";
 import { withBase } from "@/lib/paths";
 
-/** The site-wide link-preview image (kept out of the root layout; see app/layout.tsx). */
+/** The home title from Settings, and the site-wide link-preview image (kept out of the root layout; see app/layout.tsx). */
 export async function generateMetadata(): Promise<Metadata> {
   const { og, homeTitle, homeSubtitle } = await getSiteSettings();
   return {
+    title: { absolute: homeTitle },
     openGraph: {
       type: "website",
       siteName: "ParseLab Brand",

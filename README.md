@@ -44,6 +44,7 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - `pnpm test:colors`: the Colors tab end to end on a temporary brand "ColorTest": shorthand hex, gradients, edits, reordering, the public cards and the generated files.
 - `pnpm test:typography`: the Typography tab on a temporary brand "TypeTest": Coming soon, publishing a typeface, the headings/body rule, weights.
 - `pnpm test:usage`: the Usage tab on a temporary brand "UsageTest": Markdown, the safety rules, Do / Don't images, clean-up.
+- `pnpm test:settings`: the Settings page: site texts on the home and brand pages, validation, and the "Download all" zip in Auto (Rebuild now) and Manual (upload) modes. It edits the real settings and puts them back.
 - `pnpm test:kit`: the Brand kit tab on a temporary brand "KitTest": the Auto kit's contents, Rebuild now, a 20 MB manual ZIP, a fake ZIP refused, back to Auto.
 - `pnpm test:logos`: the Logos tab end to end on a temporary brand "LogoTest": uploads, rejections, PNG-only, renames, reordering, the public page, the kit and "Download all" contents, removal.
 - `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
@@ -56,6 +57,7 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - **Sessions** are a random 32-byte token in an httpOnly, Secure, SameSite=Lax `__Host-` cookie (plain name in development). The database stores only an HMAC of it (`SESSION_SECRET`). They last 7 days and renew while you use them.
 - **Protection:** [`proxy.ts`](proxy.ts) checks the session for every `/admin/**` page and `/api/admin/**` call (redirect to sign-in, or 401) before anything renders; every page, server action and route checks it again ([`lib/auth/session.ts`](lib/auth/session.ts)). Admin pages are `noindex` and disallowed in `robots.txt`.
 - **Account** (`/admin/account/`): change email (needs the current password), change password (12+ characters; signs out every other session), see and sign out sessions.
+- **Unused zips:** `pnpm storage:sweep` lists generated zips nothing references (older than 15 minutes); `pnpm storage:sweep -- --delete` deletes them. Rebuilds clean up after themselves, so it should find none.
 - **Lost password:** `pnpm admin:reset -- --email you@example.com` asks for a new one in the terminal (hidden), sets it and signs out every session. There is deliberately no email-based reset.
 
 ### Brands (`/admin/`)
@@ -90,12 +92,18 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - **Manual:** upload your own ZIP (up to 50 MB; it goes straight to storage, so it isn't limited by the server's request size). The file's content must really be a ZIP, and it's saved as `<slug>-brand-kit.zip`. Logo changes no longer touch it.
 - Switching back to Auto rebuilds the kit and deletes the uploaded one. Without a kit, the public "Download kit" button stays hidden.
 
+
+### Settings (`/admin/settings/`)
+
+- **Site texts:** home title (also the home page's `<title>`), home subtitle, footer text and contact email (linked in every footer). Saving expires the cached public pages at once.
+- **All-brands kit** (the home page's "Download all"): **Auto** zips every public brand's logos and colors, a folder per brand, and rebuilds whenever one of them changes or a brand is published or hidden; "Rebuild now" forces it. **Manual** takes your own ZIP (up to 50 MB, stored under `site/zips/`, saved as `parselab-brand-kits.zip`). Switching back to Auto rebuilds it and deletes the uploaded one.
 ### Logos (`/admin/brands/<id>/logos/`)
 
 - **Logo types:** add a preset (Full logo, Mark, Icon, Square, Circle) or a custom one; rename it, describe it, drag to reorder (the public tabs follow), delete it (typing its name when it has files).
 - **Variants:** each type is a 2×2 grid of On dark, On light, Black and White, plus optional Brand color and Dark tiles for icons and avatars. Drop or pick an SVG or PNG (up to 5 MB) per slot; Replace, Download, Remove.
 - **What an upload becomes:** an SVG is sanitized and optimized, stored under its download name (`<brand>-<type>-<variant>.svg`, editable) and rendered to transparent PNGs at 512, 1024, 2048 and 4096 px (sharp). A PNG-only upload keeps the standard widths up to its own and the public page offers "Download PNG" instead of SVG.
-- **Rebuilds:** every change marks the brand stale; after the response, `/api/internal/rebuild` (server-only, `CRON_SECRET`) rebuilds each type's zip, the brand kit (Auto mode) and "Download all" (public brands), deletes the old zips and expires the public cache. The editor shows "Rebuilding…" until it's done. Overlapping changes are safe: a rebuild only clears the flag if nothing changed while it ran.
+- **Rebuilds:** every change marks the brand stale; after the response, `/api/internal/rebuild` (server-only, `CRON_SECRET`) rebuilds each type's zip and the brand kit (Auto mode), expires the public cache, then deletes the old zips once that request has finished (Next applies the expiry at the end of the request). A public brand then queues "Download all" as its own request, so neither runs into the 60-second function limit. The editor shows "Rebuilding…" until it's done.
+- **Overlapping changes are safe:** a rebuild commits its zips only if nothing changed while it ran; otherwise it deletes what it built and the newer rebuild wins. Each file is downloaded once per rebuild, 8 at a time.
 - Logo operations go through `POST /api/admin/logos` (session + same origin) rather than server actions: on this page Next's refresh after an action could drop the action's result.
 
 ### Uploads

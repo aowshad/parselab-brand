@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS = [{ href: "/admin/", label: "Brands", match: (p: string) => p === "/admin" || p === "/admin/" || p.startsWith("/admin/brands") }];
+const LINKS = [
+  { href: "/admin/", label: "Brands", match: (p: string) => p === "/admin" || p === "/admin/" || p.startsWith("/admin/brands") },
+  { href: "/admin/settings/", label: "Settings", match: (p: string) => p.startsWith("/admin/settings") },
+];
 
 export function NavLinks() {
   const path = usePathname();

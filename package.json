@@ -16,13 +16,15 @@
     "test:e2e": "node tests/e2e/links.mjs && node tests/e2e/smoke.mjs",
     "test:parity": "node tests/e2e/parity.mjs",
     "admin:reset": "tsx scripts/admin-reset.ts",
+    "storage:sweep": "tsx --conditions=react-server scripts/sweep-zips.ts",
     "test:auth": "node tests/e2e/auth.mjs",
     "test:admin": "node tests/e2e/admin-brands.mjs",
     "test:logos": "node tests/e2e/admin-logos.mjs",
     "test:colors": "node tests/e2e/admin-colors.mjs",
     "test:typography": "node tests/e2e/admin-typography.mjs",
     "test:usage": "node tests/e2e/admin-usage.mjs",
-    "test:kit": "node tests/e2e/admin-kit.mjs"
+    "test:kit": "node tests/e2e/admin-kit.mjs",
+    "test:settings": "node tests/e2e/admin-settings.mjs"
   },
   "packageManager": "pnpm@12.8.1",
   "type": "module",

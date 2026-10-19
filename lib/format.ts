@@ -6,3 +6,6 @@ const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZ
 
 /** `2026-10-01` → `Oct 1, 2026`, independent of the build machine's timezone. */
 export const formatDate = (isoDate: string) => dateFormat.format(new Date(`${isoDate}T00:00:00Z`));
+
+/** "1 logo", "3 logos". */
+export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;

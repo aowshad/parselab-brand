@@ -10,16 +10,28 @@ import { buttonClass } from "../../ui/Button";
 import { useToast } from "../../ui/Toast";
 
 export type KitInfo = {
-  brandId: string;
+  /** Whose kit: a brand's, or (null) the site-wide "Download all" zip. */
+  brandId: string | null;
   mode: "AUTO" | "MANUAL";
   kit: { name: string; sizeKb: number; builtAt: string | null; url: string } | null;
-  logos: number;
-  colors: number;
+  /** What the automatic kit holds ("3 logos · 2 colors"), or null when there's nothing to build from. */
+  contains: string | null;
   rebuilding: boolean;
   maxMb: number;
 };
 
-const op = (o: string, args: Record<string, unknown>) => adminOp("/api/admin/kit/", o, args);
+const COPY = {
+  brand: {
+    auto: "Built from every logo (SVG, and PNGs from 512 to 4096 px, in folders), plus colors.css, colors.json and a README. It rebuilds by itself whenever a logo or color changes.",
+    empty: "No kit yet: it's built once the brand has a logo.",
+    button: "Download kit",
+  },
+  site: {
+    auto: "Every public brand's logos and colors in one ZIP, a folder per brand. It rebuilds by itself whenever a public brand's logos or colors change, or a brand is published or hidden.",
+    empty: "No kit yet: it's built once a public brand has a logo.",
+    button: "Download all",
+  },
+};
 const when = (iso: string) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
 
 /** Brand kit tab: Auto (built from the logos and colors) or Manual (your own zip). */
@@ -30,23 +42,26 @@ export function KitEditor({ info }: { info: KitInfo }) {
   const toast = useToast();
   const router = useRouter();
   const inputId = useId();
+  const copy = info.brandId ? COPY.brand : COPY.site;
+  const route = info.brandId ? "/api/admin/kit/" : "/api/admin/settings/";
+  const statusUrl = info.brandId ? `/api/admin/brands/${info.brandId}/status/` : "/api/admin/settings/";
 
   // While a rebuild runs, poll the status URL and refresh once it's done.
   useEffect(() => {
     if (!info.rebuilding) return;
     const t = setInterval(async () => {
-      const r = await fetch(`/api/admin/brands/${info.brandId}/status/`, { cache: "no-store" }).then((x) => x.json()).catch(() => null);
+      const r = await fetch(statusUrl, { cache: "no-store" }).then((x) => x.json()).catch(() => null);
       if (r && !r.rebuilding) {
         clearInterval(t);
         router.refresh();
       }
     }, 2000);
     return () => clearInterval(t);
-  }, [info.rebuilding, info.brandId, router]);
+  }, [info.rebuilding, statusUrl, router]);
 
   async function run(o: string, args: Record<string, unknown> = {}) {
     setBusy(true);
-    const r = await op(o, { brandId: info.brandId, ...args });
+    const r = await adminOp(route, o, info.brandId ? { brandId: info.brandId, ...args } : args);
     setBusy(false);
     toast(r.ok ?? r.error!, r.error ? "error" : "success");
     if (!r.error) router.refresh();
@@ -56,7 +71,7 @@ export function KitEditor({ info }: { info: KitInfo }) {
     setError(null);
     setProgress(0);
     try {
-      const up = await uploadFile(file, { purpose: "kit-zip", brandId: info.brandId }, setProgress);
+      const up = await uploadFile(file, info.brandId ? { purpose: "kit-zip", brandId: info.brandId } : { purpose: "site-kit-zip" }, setProgress);
       setProgress(null);
       await run("upload", { fileId: up.fileId });
     } catch (e) {
@@ -88,9 +103,7 @@ export function KitEditor({ info }: { info: KitInfo }) {
           ))}
         </div>
         {info.mode === "AUTO" ? (
-          <p className="text-small text-pretty text-muted">
-            Built from every logo (SVG, and PNGs from 512 to 4096 px, in folders), plus colors.css, colors.json and a README. It rebuilds by itself whenever a logo or color changes.
-          </p>
+          <p className="text-small text-pretty text-muted">{copy.auto}</p>
         ) : (
           <>
             <p className="text-small text-pretty text-muted">Upload your own ZIP (up to {info.maxMb} MB). It replaces the automatic kit until you switch back to Auto.</p>
@@ -109,7 +122,7 @@ export function KitEditor({ info }: { info: KitInfo }) {
                 <>
                   <UploadCloud aria-hidden className="size-5" />
                   <span className="font-medium text-ink">Drop a ZIP or click to upload</span>
-                  <span className="text-caption">Saved as the brand kit download</span>
+                  <span className="text-caption">Saved as the &ldquo;{copy.button}&rdquo; file</span>
                 </>
               )}
               <input id={inputId} type="file" accept=".zip,application/zip" className="sr-only" onChange={(e) => (e.target.files?.[0] && upload(e.target.files[0]), (e.target.value = ""))} />
@@ -141,17 +154,15 @@ export function KitEditor({ info }: { info: KitInfo }) {
             <dd className="tabular-nums" suppressHydrationWarning>
               {info.kit.builtAt ? when(info.kit.builtAt) : "—"}
             </dd>
-            {info.mode === "AUTO" && (
+            {info.mode === "AUTO" && info.contains && (
               <>
                 <dt className="text-muted">Contains</dt>
-                <dd>
-                  {info.logos} logo{info.logos === 1 ? "" : "s"} · {info.colors} color{info.colors === 1 ? "" : "s"}
-                </dd>
+                <dd>{info.contains}</dd>
               </>
             )}
           </dl>
         ) : (
-          <p className="text-small text-muted">{info.mode === "AUTO" ? "No kit yet: it's built once the brand has a logo." : "No kit yet: upload a ZIP."} The public &ldquo;Download kit&rdquo; button stays hidden until there is one.</p>
+          <p className="text-small text-muted">{info.mode === "AUTO" ? copy.empty : "No kit yet: upload a ZIP."} The public &ldquo;{copy.button}&rdquo; button stays hidden until there is one.</p>
         )}
         <div className="mt-auto flex flex-wrap gap-2">
           {info.kit && !info.rebuilding && (
@@ -160,7 +171,7 @@ export function KitEditor({ info }: { info: KitInfo }) {
             </a>
           )}
           {info.mode === "AUTO" && (
-            <button type="button" disabled={busy || info.rebuilding || !info.logos} onClick={() => run("rebuild")} className={buttonClass({ variant: "quiet" })}>
+            <button type="button" disabled={busy || info.rebuilding || !info.contains} onClick={() => run("rebuild")} className={buttonClass({ variant: "quiet" })}>
               <RefreshCw aria-hidden className="size-4" /> Rebuild now
             </button>
           )}

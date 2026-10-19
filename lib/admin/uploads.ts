@@ -23,6 +23,8 @@ export const PURPOSES: Record<string, Purpose> = {
   "usage-image": { kinds: ["svg", "png", "jpeg", "webp"], maxBytes: 5 * MB, label: "Image" },
   /** A hand-made brand kit (Brand kit tab, Manual mode). Supabase's free plan allows 50 MB per file. */
   "kit-zip": { kinds: ["zip"], maxBytes: KIT_MAX_MB * MB, label: "Brand kit" },
+  /** A hand-made "Download all" zip (Settings, Manual mode). Stored under site/, not a brand. */
+  "site-kit-zip": { kinds: ["zip"], maxBytes: KIT_MAX_MB * MB, label: "All-brands kit" },
 };
 
 export const MIME: Record<Kind, string> = { svg: "image/svg+xml", png: "image/png", jpeg: "image/jpeg", webp: "image/webp", zip: "application/zip" };

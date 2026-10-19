@@ -14,8 +14,9 @@ import { zipBuffer } from "./zip";
  * "Download all". A change marks the brand stale and schedules a rebuild with after(), so the
  * admin's save returns at once; the editor shows "Rebuilding…" until the flag clears.
  *
- * Safe to run concurrently: a rebuild clears the flag only if nothing changed while it ran, and
- * the change that moved it on schedules its own rebuild.
+ * Safe to run concurrently: a rebuild commits its zips only if nothing changed while it ran (the
+ * stale stamp is the one it started from). Otherwise it deletes what it built: the change that
+ * moved the stamp on has its own rebuild queued, and that one wins.
  */
 
 const PNG_COLS = ["png512Id", "png1024Id", "png2048Id", "png4096Id"] as const;
@@ -34,6 +35,32 @@ async function bytesOf(f: FileObject): Promise<Buffer> {
   return Buffer.from(await data.arrayBuffer());
 }
 
+type Get = (f: FileObject) => Promise<Buffer>;
+/**
+ * Deletes replaced zips once this request has finished. Next applies revalidateTag at the end of
+ * the request, so deleting sooner would leave public pages linking to a missing file meanwhile.
+ */
+function deleteAfterResponse(ids: (string | null | undefined)[]) {
+  after(() => deleteFiles(ids).catch((e) => console.error("Deleting replaced zips failed:", e)));
+}
+
+/** One rebuild's file reader: each file is downloaded once, at most 8 at a time. */
+function downloader(parallel = 8): Get {
+  const cache = new Map<string, Promise<Buffer>>();
+  const queue: (() => void)[] = [];
+  let running = 0;
+  const slot = () => (running < parallel ? (running++, Promise.resolve()) : new Promise<void>((r) => queue.push(r)));
+  const release = () => (queue.length ? queue.shift()!() : running--);
+  return (f) => {
+    let p = cache.get(f.id);
+    if (!p) {
+      p = slot().then(() => bytesOf(f).finally(release));
+      cache.set(f.id, p);
+    }
+    return p;
+  };
+}
+
 type BrandForZips = NonNullable<Awaited<ReturnType<typeof loadBrand>>>;
 function loadBrand(id: string) {
   return db.brand.findUnique({
@@ -43,19 +70,19 @@ function loadBrand(id: string) {
 }
 
 /** `svg/<name>` and `png/<width>/<name>` entries (the layout the kits have always had). */
-async function variantEntries(b: BrandForZips, files: Map<string, FileObject>, prefix = "") {
-  const out: { name: string; bytes: Buffer }[] = [];
+async function variantEntries(b: BrandForZips, files: Map<string, FileObject>, get: Get, prefix = "") {
+  const wanted: { name: string; file: FileObject }[] = [];
   for (const t of b.logoTypes) {
     for (const v of t.variants) {
       const svg = v.svgFileId ? files.get(v.svgFileId) : undefined;
-      if (svg) out.push({ name: `${prefix}svg/${svg.name}`, bytes: await bytesOf(svg) });
+      if (svg) wanted.push({ name: `${prefix}svg/${svg.name}`, file: svg });
       for (const col of PNG_COLS) {
         const p = v[col] ? files.get(v[col]!) : undefined;
-        if (p) out.push({ name: `${prefix}png/${SIZE[col]}/${p.name}`, bytes: await bytesOf(p) });
+        if (p) wanted.push({ name: `${prefix}png/${SIZE[col]}/${p.name}`, file: p });
       }
     }
   }
-  return out;
+  return Promise.all(wanted.map(async (w) => ({ name: w.name, bytes: await get(w.file) })));
 }
 
 async function filesFor(b: BrandForZips): Promise<Map<string, FileObject>> {
@@ -64,13 +91,9 @@ async function filesFor(b: BrandForZips): Promise<Map<string, FileObject>> {
   return new Map(rows.map((f) => [f.id, f]));
 }
 
-async function colorEntries(b: BrandForZips, files: Map<string, FileObject>, prefix = "") {
-  const out: { name: string; bytes: Buffer }[] = [];
-  for (const id of [b.colorsJsonFileId, b.colorsCssFileId]) {
-    const f = id ? files.get(id) : undefined;
-    if (f) out.push({ name: `${prefix}${f.name}`, bytes: await bytesOf(f) });
-  }
-  return out;
+async function colorEntries(b: BrandForZips, files: Map<string, FileObject>, get: Get, prefix = "") {
+  const wanted = [b.colorsJsonFileId, b.colorsCssFileId].map((id) => (id ? files.get(id) : undefined)).filter((f): f is FileObject => Boolean(f));
+  return Promise.all(wanted.map(async (f) => ({ name: `${prefix}${f.name}`, bytes: await get(f) })));
 }
 
 /** README.txt at the top of every automatic brand kit. */
@@ -94,7 +117,7 @@ function kitReadme(b: BrandForZips, files: number, colors: boolean): string {
   ].join("\n");
 }
 
-/** Rebuilds one brand's type zips and (in Auto mode) its kit, then the site-wide zip. */
+/** Rebuilds one brand's type zips and (in Auto mode) its kit, then queues the site-wide zip. */
 export async function rebuildBrand(brandId: string): Promise<void> {
   const start = await db.brand.findUnique({ where: { id: brandId }, select: { assetsStaleAt: true } });
   if (!start?.assetsStaleAt) return;
@@ -102,22 +125,22 @@ export async function rebuildBrand(brandId: string): Promise<void> {
   const b = await loadBrand(brandId);
   if (!b) return;
   const files = await filesFor(b);
-  const old: (string | null)[] = [];
+  const get = downloader();
 
+  const typeZips: { id: string; zip: FileObject | null }[] = [];
   for (const t of b.logoTypes) {
-    const single = { ...b, logoTypes: [t] };
-    const entries = t.variants.length ? await variantEntries(single, files) : [];
+    const entries = t.variants.length ? await variantEntries({ ...b, logoTypes: [t] }, files, get) : [];
     const zip = entries.length
       ? await storeFile({ brandId, kind: "zips", name: `${b.slug}-${t.key}-logos.zip`, bytes: await zipBuffer(entries), mime: "application/zip" })
       : null;
-    await db.logoType.update({ where: { id: t.id }, data: { zipFileId: zip?.id ?? null } });
-    old.push(t.zipFileId);
+    typeZips.push({ id: t.id, zip });
   }
 
+  // undefined: Manual mode, the kit isn't ours to touch.
+  let kit: FileObject | null | undefined;
   if (b.kitMode === "AUTO") {
-    const entries = await variantEntries(b, files);
-    const colors = await colorEntries(b, files);
-    const kit = entries.length
+    const [entries, colors] = await Promise.all([variantEntries(b, files, get), colorEntries(b, files, get)]);
+    kit = entries.length
       ? await storeFile({
           brandId,
           kind: "zips",
@@ -126,17 +149,37 @@ export async function rebuildBrand(brandId: string): Promise<void> {
           mime: "application/zip",
         })
       : null;
-    // Raw SQL: the kit rebuilding isn't an edit, so "Updated" doesn't move.
-    await db.$executeRaw`UPDATE "Brand" SET "kitFileId" = ${kit?.id ?? null}, "kitBuiltAt" = ${kit ? new Date() : null} WHERE "id" = ${brandId}`;
-    old.push(b.kitFileId);
   }
+  const built = [...typeZips.map((t) => t.zip?.id), kit?.id];
 
-  // Done, unless something changed meanwhile (that change has its own rebuild queued).
-  await db.$executeRaw`UPDATE "Brand" SET "assetsStaleAt" = NULL WHERE "id" = ${brandId} AND "assetsStaleAt" = ${stamp}`;
-  await deleteFiles(old);
-  await markAllKitStale();
-  await rebuildAllKit();
+  // Commit, unless something changed meanwhile (that change has its own rebuild queued).
+  const committed = await db.$transaction(async (tx) => {
+    const current = await tx.$executeRaw`UPDATE "Brand" SET "assetsStaleAt" = NULL WHERE "id" = ${brandId} AND "assetsStaleAt" = ${stamp}`;
+    if (!current) return null;
+    const before = await tx.brand.findUnique({ where: { id: brandId }, select: { kitFileId: true, kitMode: true, logoTypes: { select: { id: true, zipFileId: true } } } });
+    if (!before) return null;
+    const replaced: (string | null)[] = [];
+    for (const t of typeZips) {
+      const was = before.logoTypes.find((x) => x.id === t.id);
+      if (!was) continue;
+      await tx.logoType.update({ where: { id: t.id }, data: { zipFileId: t.zip?.id ?? null } });
+      replaced.push(was.zipFileId);
+    }
+    // Raw SQL: the kit rebuilding isn't an edit, so "Updated" doesn't move.
+    if (kit !== undefined && before.kitMode === "AUTO") {
+      await tx.$executeRaw`UPDATE "Brand" SET "kitFileId" = ${kit?.id ?? null}, "kitBuiltAt" = ${kit ? new Date() : null} WHERE "id" = ${brandId}`;
+      replaced.push(before.kitFileId);
+    }
+    return replaced;
+  });
+
+  if (!committed) {
+    await deleteFiles(built);
+    return;
+  }
   expirePublic(b.slug);
+  if (b.status !== "DRAFT") await scheduleAllKitRebuild();
+  deleteAfterResponse([...committed, ...built]);
 }
 
 export async function markAllKitStale() {
@@ -149,19 +192,33 @@ export async function rebuildAllKit(): Promise<void> {
   if (!s?.allKitStaleAt || s.allKitMode !== "AUTO") return;
   const stamp = s.allKitStaleAt;
   const brands = await db.brand.findMany({ where: { status: { in: ["SOON", "LIVE"] } }, orderBy: { sortOrder: "asc" }, select: { id: true } });
-  const entries: { name: string; bytes: Buffer }[] = [];
-  for (const { id } of brands) {
-    const b = await loadBrand(id);
-    if (!b) continue;
-    const files = await filesFor(b);
-    const logos = await variantEntries(b, files, `${b.slug}/`);
-    if (logos.length) entries.push(...logos, ...(await colorEntries(b, files, `${b.slug}/`)));
-  }
+  const get = downloader();
+  const perBrand = await Promise.all(
+    brands.map(async ({ id }) => {
+      const b = await loadBrand(id);
+      if (!b) return [];
+      const files = await filesFor(b);
+      const logos = await variantEntries(b, files, get, `${b.slug}/`);
+      return logos.length ? [...logos, ...(await colorEntries(b, files, get, `${b.slug}/`))] : [];
+    }),
+  );
+  const entries = perBrand.flat();
   const zip = entries.length ? await storeFile({ brandId: null, kind: "zips", name: "parselab-brand-kits.zip", bytes: await zipBuffer(entries), mime: "application/zip" }) : null;
-  await db.siteSettings.update({ where: { id: 1 }, data: { allKitFileId: zip?.id ?? null } });
-  await db.$executeRaw`UPDATE "SiteSettings" SET "allKitStaleAt" = NULL WHERE "id" = 1 AND "allKitStaleAt" = ${stamp}`;
-  await deleteFiles([s.allKitFileId]);
+
+  // Commit only if still current and still Auto (an upload in Manual mode wins).
+  const replaced = await db.$transaction(async (tx) => {
+    const current = await tx.$executeRaw`UPDATE "SiteSettings" SET "allKitStaleAt" = NULL WHERE "id" = 1 AND "allKitStaleAt" = ${stamp} AND "allKitMode" = 'AUTO'`;
+    if (!current) return undefined;
+    const before = await tx.siteSettings.findUnique({ where: { id: 1 }, select: { allKitFileId: true } });
+    await tx.siteSettings.update({ where: { id: 1 }, data: { allKitFileId: zip?.id ?? null } });
+    return before?.allKitFileId ?? null;
+  });
+  if (replaced === undefined) {
+    await deleteFiles([zip?.id]);
+    return;
+  }
   revalidateTag(CACHE_TAGS.settings, { expire: 0 });
+  deleteAfterResponse([replaced]);
 }
 
 /**
