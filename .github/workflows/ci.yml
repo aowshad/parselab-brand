@@ -19,7 +19,8 @@ permissions:
 jobs:
   check:
     name: Build and test
-    runs-on: ubuntu-latest
+    # Pinned: "ubuntu-latest" moves to Ubuntu 26 from October 2026; move on purpose, after a test run.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       # The public pages are prerendered from the database at build time. Read-only use: the
