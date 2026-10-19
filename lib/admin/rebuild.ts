@@ -73,6 +73,27 @@ async function colorEntries(b: BrandForZips, files: Map<string, FileObject>, pre
   return out;
 }
 
+/** README.txt at the top of every automatic brand kit. */
+function kitReadme(b: BrandForZips, files: number, colors: boolean): string {
+  const types = b.logoTypes.filter((t) => t.variants.length).map((t) => `  - ${t.label}: ${t.variants.map((v) => v.name).join(", ")}`);
+  return [
+    `${b.name} brand kit`,
+    "",
+    `Built ${new Date().toISOString().slice(0, 10)} by the ParseLab brand portal.`,
+    "",
+    "Logos",
+    ...types,
+    "",
+    "Folders",
+    "  svg/          every logo as SVG (any size)",
+    "  png/<width>/  transparent PNGs, 512 to 4096 px wide",
+    ...(colors ? ["  colors.css    the palette as CSS custom properties", "  colors.json   the palette with hex, RGB and HSL"] : []),
+    "",
+    `${files} logo files in total. Use the variant made for your background (On light, On dark, Black, White).`,
+    "",
+  ].join("\n");
+}
+
 /** Rebuilds one brand's type zips and (in Auto mode) its kit, then the site-wide zip. */
 export async function rebuildBrand(brandId: string): Promise<void> {
   const start = await db.brand.findUnique({ where: { id: brandId }, select: { assetsStaleAt: true } });
@@ -95,8 +116,15 @@ export async function rebuildBrand(brandId: string): Promise<void> {
 
   if (b.kitMode === "AUTO") {
     const entries = await variantEntries(b, files);
+    const colors = await colorEntries(b, files);
     const kit = entries.length
-      ? await storeFile({ brandId, kind: "zips", name: `${b.slug}-brand-kit.zip`, bytes: await zipBuffer([...entries, ...(await colorEntries(b, files))]), mime: "application/zip" })
+      ? await storeFile({
+          brandId,
+          kind: "zips",
+          name: `${b.slug}-brand-kit.zip`,
+          bytes: await zipBuffer([{ name: "README.txt", bytes: Buffer.from(kitReadme(b, entries.length, colors.length > 0)) }, ...entries, ...colors]),
+          mime: "application/zip",
+        })
       : null;
     // Raw SQL: the kit rebuilding isn't an edit, so "Updated" doesn't move.
     await db.$executeRaw`UPDATE "Brand" SET "kitFileId" = ${kit?.id ?? null}, "kitBuiltAt" = ${kit ? new Date() : null} WHERE "id" = ${brandId}`;

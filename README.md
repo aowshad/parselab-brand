@@ -44,6 +44,7 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - `pnpm test:colors`: the Colors tab end to end on a temporary brand "ColorTest": shorthand hex, gradients, edits, reordering, the public cards and the generated files.
 - `pnpm test:typography`: the Typography tab on a temporary brand "TypeTest": Coming soon, publishing a typeface, the headings/body rule, weights.
 - `pnpm test:usage`: the Usage tab on a temporary brand "UsageTest": Markdown, the safety rules, Do / Don't images, clean-up.
+- `pnpm test:kit`: the Brand kit tab on a temporary brand "KitTest": the Auto kit's contents, Rebuild now, a 20 MB manual ZIP, a fake ZIP refused, back to Auto.
 - `pnpm test:logos`: the Logos tab end to end on a temporary brand "LogoTest": uploads, rejections, PNG-only, renames, reordering, the public page, the kit and "Download all" contents, removal.
 - `pnpm test:parity`: pixel-compares every page, in both themes at 1440 and 375px, against a reference build on port 4174 (`REF_URL`).
 
@@ -64,7 +65,6 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - **General tab:** name, URL slug (lowercase, unique, not a reserved word such as `admin` or `api`), tagline, status, accent color, brand icon, and a preview of the home card in both themes. Changing the slug can keep a redirect from the old URL; old URLs can be removed later. Unsaved changes show a save bar and ask before you leave.
 - **Delete** (Danger zone or row menu) needs the brand's name typed exactly, and removes everything in its storage folder. **Duplicate** copies a brand, files included, as a Draft.
 - Every save expires exactly the public pages it touched (`updateTag`), so the site shows it on the next visit.
-- The Colors, Typography, Usage and Brand kit tabs get their editors in the next phase.
 
 ### Colors (`/admin/brands/<id>/colors/`)
 
@@ -83,6 +83,12 @@ With the site running on port 4173 (`pnpm start -p 4173`):
 - "Show as Coming soon" (the default), or written guidelines in Markdown (Write / Preview) plus up to 12 Do / Don't pairs, each side an image (SVG, PNG, JPEG or WebP, up to 5 MB) and a caption.
 - The public page renders the Markdown safely: no raw HTML, no images from Markdown (only the uploaded Do / Don't ones), and links to other sites open in a new tab with `rel="noopener noreferrer"`.
 - Images taken out of a pair are deleted from storage on save; duplicating a brand copies them.
+
+### Brand kit (`/admin/brands/<id>/kit/`)
+
+- **Auto** (the default): the kit is rebuilt after every change to logos or colors. It holds `README.txt`, `svg/`, `png/<width>/` and, when the brand has colors, `colors.css` and `colors.json`. "Rebuild now" forces a rebuild.
+- **Manual:** upload your own ZIP (up to 50 MB; it goes straight to storage, so it isn't limited by the server's request size). The file's content must really be a ZIP, and it's saved as `<slug>-brand-kit.zip`. Logo changes no longer touch it.
+- Switching back to Auto rebuilds the kit and deletes the uploaded one. Without a kit, the public "Download kit" button stays hidden.
 
 ### Logos (`/admin/brands/<id>/logos/`)
 
@@ -142,4 +148,4 @@ Variant ids end in what they're made for: `-light-bg` (On light), `-dark-bg` (On
 - **Home cards** have one thumbnail background per theme. Light mode shows the Full logo's `-light-bg` variant (else `-black`), dark mode its `-dark-bg` (else `-white`). As a last resort the other theme's logo sits on a small plate of its own `previewBg`. No Full logo: the same order on the Icon group. No logos: the brand name.
 - **Logo preview** starts on On dark in dark mode and On light in light mode, until a variant is picked.
 
-The hero icon and favicon is the variant with id `icon-brand` (falls back to the first variant on its own `previewBg`, then to the brand's initial). Replacing a logo means dropping in a new SVG with the same filename. Typography shows "Coming soon" for a brand without `typography`; Usage guidelines show it until they get a content model.
+The hero icon and favicon is the variant with id `icon-brand` (falls back to the first variant on its own `previewBg`, then to the brand's initial). Replacing a logo means dropping in a new SVG with the same filename. Typography shows "Coming soon" for a brand without `typography`; Usage guidelines show it until they're written in the admin (Usage tab).

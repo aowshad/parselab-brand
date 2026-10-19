@@ -21,7 +21,8 @@
     "test:logos": "node tests/e2e/admin-logos.mjs",
     "test:colors": "node tests/e2e/admin-colors.mjs",
     "test:typography": "node tests/e2e/admin-typography.mjs",
-    "test:usage": "node tests/e2e/admin-usage.mjs"
+    "test:usage": "node tests/e2e/admin-usage.mjs",
+    "test:kit": "node tests/e2e/admin-kit.mjs"
   },
   "packageManager": "pnpm@12.8.1",
   "type": "module",
