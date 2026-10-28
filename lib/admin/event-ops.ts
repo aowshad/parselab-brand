@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "../db";
+import { plural } from "../format";
 import { slugify } from "../slug";
 import { deleteFiles } from "./files";
 import type { OpResult } from "./logo-ops";
@@ -65,5 +66,5 @@ export async function deleteEvent(eventId: string, confirm: unknown): Promise<Op
   await db.event.delete({ where: { id: eventId } });
   const removed = await deleteFiles(event.items.flatMap(fileIdsOf));
   expirePublic();
-  return { ok: `${event.name} deleted${event.items.length ? ` · ${removed} files removed` : ""}` };
+  return { ok: `${event.name} deleted${event.items.length ? ` · ${plural(removed, "file")} removed` : ""}` };
 }

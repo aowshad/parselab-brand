@@ -25,7 +25,8 @@
     "test:typography": "node tests/e2e/admin-typography.mjs",
     "test:usage": "node tests/e2e/admin-usage.mjs",
     "test:kit": "node tests/e2e/admin-kit.mjs",
-    "test:settings": "node tests/e2e/admin-settings.mjs"
+    "test:settings": "node tests/e2e/admin-settings.mjs",
+    "test:media": "node tests/e2e/admin-media.mjs"
   },
   "packageManager": "pnpm@12.8.1",
   "type": "module",

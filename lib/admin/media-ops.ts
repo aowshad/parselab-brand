@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "../db";
 import type { MediaKind } from "../generated/prisma/client";
+import { plural } from "../format";
 import { slugify } from "../slug";
 import { deleteFiles, renameFile } from "./files";
 import type { OpResult } from "./logo-ops";
@@ -122,7 +123,7 @@ export async function deleteItem(itemId: string): Promise<OpResult> {
   const removed = await deleteFiles(fileIdsOf(item));
   if (!item.eventId && item.kind === "VIDEO") await rebuildAnimationsZip(item.brandId);
   expirePublic(item.brand.slug);
-  return { ok: `${item.name} deleted · ${removed} file${removed === 1 ? "" : "s"} removed` };
+  return { ok: `${item.name} deleted · ${plural(removed, "file")} removed` };
 }
 
 /** What the admin polls while videos are being processed. */
