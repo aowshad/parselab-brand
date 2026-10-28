@@ -2,3 +2,13 @@ allowBuilds:
   esbuild: true
   "@prisma/engines": true
   prisma: true
+  # ffmpeg's platform packages only run `chmod u+x ffmpeg`. Allowed so installs pass on build
+  # servers; lib/admin/media.ts makes the binary executable itself when this didn't run.
+  "@ffmpeg-installer/darwin-arm64": true
+  "@ffmpeg-installer/darwin-x64": true
+  "@ffmpeg-installer/linux-arm64": true
+  "@ffmpeg-installer/linux-arm": true
+  "@ffmpeg-installer/linux-ia32": true
+  "@ffmpeg-installer/linux-x64": true
+  "@ffmpeg-installer/win32-ia32": true
+  "@ffmpeg-installer/win32-x64": true
