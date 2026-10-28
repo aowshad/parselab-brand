@@ -1,15 +1,19 @@
+"use client";
+
 import { eventDates } from "@/lib/event-dates";
 import type { BrandEventView } from "@/lib/view";
 import { Section } from "../sections/Section";
 import { LiveBadge } from "./LiveBadge";
 import { MediaCard } from "./MediaCard";
+import { useEventOrder } from "./useEventOrder";
 
-/** The brand's seasonal logos and videos, one block per event, newest first. */
+/** The brand's seasonal logos and videos, one block per event: live, then upcoming, then past. */
 export function EventsSection({ events }: { events: BrandEventView[] }) {
+  const ordered = useEventOrder(events);
   return (
     <Section id="events" title="Events" subtitle="Seasonal logos and videos, like Halloween or Christmas.">
       <div className="flex flex-col gap-10">
-        {events.map((e) => (
+        {ordered.map((e) => (
           <EventItems key={e.key} event={e} />
         ))}
       </div>

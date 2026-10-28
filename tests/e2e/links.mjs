@@ -15,6 +15,8 @@ for (const path of ["/", ...brands.map((b) => `/${b}/`), ...(events.length ? ["/
   page.on("requestfailed", (r) => failed.add(r.url()));
   page.on("response", (r) => r.status() >= 400 && failed.add(`${r.status()} ${r.url()}`));
   await revealAll(page);
+  // Event cards load their images lazily; give them time to finish before judging.
+  await page.waitForFunction(() => [...document.images].filter((i) => i.getClientRects().length).every((i) => i.complete), { timeout: 15000 }).catch(() => {});
   // Open every download menu so its PNG links are in the DOM too.
   const found = await page.evaluate(() => {
     const out = [];

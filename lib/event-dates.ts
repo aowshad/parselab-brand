@@ -15,3 +15,24 @@ export function isLive(startsOn: string | null, endsOn: string | null, today = n
   const t = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   return (!startsOn || t >= startsOn) && (!endsOn || t <= endsOn);
 }
+
+type Dated = { startsOn: string | null; endsOn: string | null };
+
+/**
+ * Today's order: live events first, then upcoming ones (soonest first), then past ones (most
+ * recent first); events without dates last, in their given order.
+ */
+export function byRelevance<T extends Dated>(events: T[], today = new Date()): T[] {
+  const t = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const rank = (e: Dated) => (!e.startsOn && !e.endsOn ? 3 : isLive(e.startsOn, e.endsOn, today) ? 0 : e.startsOn && e.startsOn > t ? 1 : 2);
+  return events
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => {
+      const ra = rank(a.e), rb = rank(b.e);
+      if (ra !== rb) return ra - rb;
+      if (ra === 1) return (a.e.startsOn ?? "").localeCompare(b.e.startsOn ?? "");
+      if (ra === 2) return (b.e.endsOn ?? b.e.startsOn ?? "").localeCompare(a.e.endsOn ?? a.e.startsOn ?? "");
+      return a.i - b.i;
+    })
+    .map(({ e }) => e);
+}
