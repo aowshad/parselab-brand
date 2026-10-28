@@ -69,7 +69,8 @@ async function probe(file: string): Promise<VideoInfo> {
   const out = await run(["-i", file, "-t", "0", "-f", "null", "-"], { allowFailure: true });
   const d = out.match(/Duration: (\d+):(\d+):(\d+(?:\.\d+)?)/);
   const v = out.match(/Stream #[^\n]*Video:[^\n]*?(\d{2,5})x(\d{2,5})/);
-  if (!d || !v) {
+  // Some builds report a GIF's duration as N/A: only the picture size is required.
+  if (!v) {
     console.error("ffmpeg couldn't read the upload:", out.slice(-600));
     throw new Error("That video couldn't be read. Export it again as MP4 (H.264) and retry.");
   }
@@ -78,7 +79,7 @@ async function probe(file: string): Promise<VideoInfo> {
   return {
     width: rotated ? h : w,
     height: rotated ? w : h,
-    durationMs: Math.round((Number(d[1]) * 3600 + Number(d[2]) * 60 + Number(d[3])) * 1000),
+    durationMs: d ? Math.round((Number(d[1]) * 3600 + Number(d[2]) * 60 + Number(d[3])) * 1000) : 0,
     hasAudio: /Stream #[^\n]*Audio:/.test(out),
   };
 }
