@@ -4,13 +4,15 @@
 export const RESERVED_SLUGS = ["admin", "api", "files", "login", "_next", "brands", "static", "assets", "robots", "favicon", "sitemap", "events"];
 export const MAX_SLUG = 48;
 
-/** "ProductsModel" → "productsmodel", "Jewels & Co." → "jewels-and-co". */
+/** "ProductsModel" → "productsmodel", "Jewels & Co." → "jewels-and-co", "Valentine's Day" → "valentines-day". */
 export function slugify(name: string): string {
   return name
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/&/g, " and ")
+    // "Valentine's Day" → "valentines-day", not "valentine-s-day".
+    .replace(/['’]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, MAX_SLUG)
