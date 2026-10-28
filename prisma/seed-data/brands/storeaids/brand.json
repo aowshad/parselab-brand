@@ -1,0 +1,51 @@
+{
+  "slug": "storeaids",
+  "name": "StoreAids",
+  "description": "Logos, colors and app icons for StoreAids.",
+  "status": "live",
+  "order": 6,
+  "updatedAt": "2026-10-28",
+  "contact": "brand@parselab.com",
+  "ogLogo": "full-light-bg",
+  "logoGroups": [
+    {
+      "key": "full",
+      "label": "Full logo",
+      "description": "Icon + wordmark. The default logo.",
+      "variants": [
+        { "id": "full-light-bg", "name": "On light", "file": "full-light-bg.svg", "previewBg": "#FFFFFF", "dot": "#FFFFFF", "usage": "Primary lockup for white and light surfaces. Use this one by default." },
+        { "id": "full-dark-bg", "name": "On dark", "file": "full-dark-bg.svg", "previewBg": "#1E1E1E", "dot": "#1E1E1E", "usage": "Primary lockup for dark surfaces, dark UI, video and photography." }
+      ]
+    },
+    {
+      "key": "mark",
+      "label": "Mark",
+      "description": "The S+ icon on its own, for tight spaces.",
+      "variants": [
+        { "id": "mark-brand", "name": "Brand color", "file": "mark-brand.svg", "previewBg": "#F3F4F6", "dot": "#FE6A2E", "usage": "Use when the wordmark appears nearby or space is too tight for the full logo." }
+      ]
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "description": "App icon and favicon tiles.",
+      "variants": [
+        { "id": "icon-brand", "name": "Brand color", "file": "icon-brand.svg", "previewBg": "#F3F4F6", "dot": "#FE6A2E", "usage": "App listings, favicons and anywhere the brand needs a self-contained tile." },
+        { "id": "icon-dark", "name": "Dark", "file": "icon-dark.svg", "previewBg": "#F3F4F6", "dot": "#393939", "usage": "Dark tile for light interfaces and app stores with a light theme." },
+        { "id": "icon-light", "name": "Light", "file": "icon-light.svg", "previewBg": "#E5E7EB", "dot": "#FFFFFF", "usage": "White tile for dark interfaces and dark-mode app stores." }
+      ]
+    }
+  ],
+  "palettes": [
+    {
+      "name": "Main palette",
+      "colors": [
+        { "name": "StoreAids Orange", "role": "Brand gradient", "gradient": { "angle": 225, "stops": [{ "hex": "#FFA44D", "at": 0 }, { "hex": "#FE6A2E", "at": 90 }] } },
+        { "name": "Orange", "role": "Primary", "hex": "#FE6A2E" },
+        { "name": "Light orange", "role": "Accent", "hex": "#FFA44D" },
+        { "name": "Charcoal", "role": "Wordmark & text", "hex": "#393939" },
+        { "name": "White", "role": "Backgrounds", "hex": "#FFFFFF" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Storeaids">
+<g id="Logo Icon" filter="url(#filter0_i_7_83)">
+<path d="M31.0345 0C33.7769 1.19873e-07 36 2.22314 36 4.96552V9.93103H18.6207V4.34483H15.5172V9.93103H9.93103V13.0345H15.5172V19.2414H18.6207V13.0345H36V31.0345C36 33.7769 33.7769 36 31.0345 36H4.96552C2.22314 36 -3.59619e-07 33.7769 0 31.0345V26.069H26.069V22.9655H0V4.96552C0 2.22314 2.22314 0 4.96552 0H31.0345Z" fill="url(#paint0_radial_7_83)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_i_7_83" x="0" y="0" width="36" height="36" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="1.24138" dy="1.24138"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.645451 0 0 0 0 0.270263 0 0 0 0 0 0 0 0 0.2 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_7_83"/>
+</filter>
+<radialGradient id="paint0_radial_7_83" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(33.0968 2.32258) rotate(135) scale(45.1636 34.0929)">
+<stop stop-color="#FFA44D"/>
+<stop offset="0.895" stop-color="#FE6A2E"/>
+</radialGradient>
+</defs>
+</svg>
