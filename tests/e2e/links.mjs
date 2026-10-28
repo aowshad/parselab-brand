@@ -1,6 +1,6 @@
 // Crawls every public page: each linked or embedded file must load, assets must come from
 // Supabase Storage, and downloads must save under their real file name.
-import { BASE, check, done, launch, open, publishedBrands, revealAll } from "./lib.mjs";
+import { BASE, check, done, launch, open, publishedBrands, publishedEvents, revealAll } from "./lib.mjs";
 
 const STORAGE = process.env.STORAGE_ORIGIN ?? "https://gthtvjnxmfsgitvnsvor.supabase.co";
 const browser = await launch();
@@ -9,7 +9,8 @@ const failed = new Set();
 
 const brands = await publishedBrands();
 check(brands.length >= 5, `the home page lists ${brands.length} brands: ${brands.join(", ")}`);
-for (const path of ["/", ...brands.map((b) => `/${b}/`)]) {
+const events = await publishedEvents();
+for (const path of ["/", ...brands.map((b) => `/${b}/`), ...(events.length ? ["/events/", ...events.map((e) => `/events/${e}/`)] : [])]) {
   const page = await open(browser, BASE + path);
   page.on("requestfailed", (r) => failed.add(r.url()));
   page.on("response", (r) => r.status() >= 400 && failed.add(`${r.status()} ${r.url()}`));
@@ -37,7 +38,7 @@ for (const path of ["/", ...brands.map((b) => `/${b}/`)]) {
 
 const assets = [...refs.keys()].filter((u) => !u.startsWith(BASE));
 check(assets.length > 0 && assets.every((u) => u.startsWith(`${STORAGE}/storage/v1/object/public/brand-assets/`)), `${assets.length} asset URLs, all from Supabase Storage`);
-check(assets.every((u) => /\/[0-9a-f-]{36}\/[A-Za-z0-9._%@-]+\.(svg|png|zip|css|json)(\?|$)/.test(u)), "every storage key is <server-generated UUID>/<clean file name>");
+check(assets.every((u) => /\/[0-9a-f-]{36}\/[A-Za-z0-9._%@-]+\.(svg|png|zip|css|json|mp4|webm|gif|jpe?g|webp)(\?|$)/.test(u)), "every storage key is <server-generated UUID>/<clean file name>");
 
 const bad = [];
 for (const [u, { kind, name }] of refs) {

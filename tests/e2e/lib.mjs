@@ -7,7 +7,12 @@ export const BRANDS = ["parselab", "optionia", "inkybay", "jewelslab", "quotend"
 /** Every brand the home page links to right now (brands added in the admin included). */
 export async function publishedBrands() {
   const html = await (await fetch(`${BASE}/`)).text();
-  return [...new Set([...html.matchAll(/href="\/([a-z0-9-]+)\/"/g)].map((m) => m[1]))];
+  return [...new Set([...html.matchAll(/href="\/([a-z0-9-]+)\/"/g)].map((m) => m[1]))].filter((slug) => slug !== "events");
+}
+/** Every event the events index links to. */
+export async function publishedEvents() {
+  const html = await (await fetch(`${BASE}/events/`)).text();
+  return [...new Set([...html.matchAll(/href="\/events\/([a-z0-9-]+)\/"/g)].map((m) => m[1]))];
 }
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
