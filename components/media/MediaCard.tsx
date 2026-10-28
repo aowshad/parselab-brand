@@ -22,7 +22,8 @@ export function MediaCard({ item }: { item: MediaView }) {
             .filter(Boolean)
             .join(" · ")}
         </p>
-        <div className="mt-auto pt-3">
+        {/* w-fit: the button group's shadow spans its box, which would otherwise be the card's width. */}
+        <div className="mt-auto w-fit pt-3">
           <MediaDownload item={item} />
         </div>
       </div>
