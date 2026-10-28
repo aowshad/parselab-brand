@@ -76,3 +76,37 @@ export function BrandTopBar({ brand }: { brand: Pick<BrandView, "name" | "kit"> 
     </StickyBar>
   );
 }
+
+/** Event pages: a breadcrumb trail (the last item is the current page). */
+export function TrailTopBar({ trail }: { trail: { label: string; href?: string }[] }) {
+  return (
+    <StickyBar>
+      <nav aria-label="Breadcrumb" className="min-w-0">
+        <ol className="flex min-w-0 items-center gap-2 text-body">
+          <li className="shrink-0">
+            <a href={withBase("/")} className="motion-colors rounded-[6px] text-muted hover:text-ink">
+              {SITE_NAME}
+            </a>
+          </li>
+          {trail.map((t, i) => (
+            <li key={t.label} className={`flex min-w-0 items-center gap-2 ${i < trail.length - 1 ? "shrink-0" : ""}`}>
+              <span aria-hidden className="text-muted">
+                /
+              </span>
+              {t.href ? (
+                <a href={withBase(t.href)} className="motion-colors rounded-[6px] text-muted hover:text-ink">
+                  {t.label}
+                </a>
+              ) : (
+                <span className="truncate font-semibold text-ink" aria-current="page">
+                  {t.label}
+                </span>
+              )}
+            </li>
+          ))}
+        </ol>
+      </nav>
+      <Actions />
+    </StickyBar>
+  );
+}

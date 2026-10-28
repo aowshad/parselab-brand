@@ -63,6 +63,9 @@
   - **Colors:** click to copy HEX, RGB or HSL, with `colors.css` and `colors.json` downloads.
   - **Typography:** typefaces in the real fonts, with the type scale.
   - **Usage guidelines:** written guidance plus Do / Don't examples.
+  - **Animations** (when a brand has any): logo animations playing on the page, as MP4 (with and without sound), WebM and GIF.
+  - **Events** (when a brand has any): seasonal logos and videos, like Halloween 2026, with a "Live now" badge between the event's dates.
+- **Event pages** (`/events/`, `/events/<event>/`): one event across every brand, linked from the home page.
 - **Brand kit:** everything above in one ZIP per brand.
 - Light, dark and system themes; works on phones; keyboard accessible.
 
@@ -71,6 +74,8 @@
 - Create, duplicate, reorder, publish and delete brands.
 - Upload logos (SVG or PNG). Each one is checked, cleaned and turned into PNGs automatically.
 - Edit colors, typography and usage guidelines, with live previews.
+- Upload one video per animation: the MP4, the MP4 without sound, the WebM, the GIF and the preview still are made automatically (ffmpeg).
+- Create events (one per year: Halloween 2026, Black Friday 2026…) and add each brand's images and videos to them.
 - Brand kits and "Download all" rebuild themselves after every change, or you can upload your own.
 - Site settings: home page texts, footer and contact email.
 
@@ -91,7 +96,7 @@ The brands today: ParseLab, Optionia, InkyBay, JewelsLab and Quotend.
 
 ## Getting started
 
-You need Node.js 24, a Supabase project with a **public** storage bucket named `brand-assets`, and its connection details.
+You need Node.js 24, ffmpeg for the media test (`brew install ffmpeg`; the app ships its own), a Supabase project with a **public** storage bucket named `brand-assets`, and its connection details.
 
 ```sh
 corepack enable                # once: provides pnpm
@@ -141,6 +146,9 @@ Sign in at [`/admin/`](https://parselab-brand.vercel.app/admin/). There's one ad
 | **Colors** | Solid colors or gradients, with CMYK and Pantone; drag to reorder |
 | **Typography** | Up to 4 typefaces with weights, previewed in the real fonts |
 | **Usage** | Markdown guidelines and Do / Don't image pairs |
+| **Animations** | Logo animations: upload one MP4 or MOV each; rename, describe, reorder, delete |
+| **Events** (brand tab) | This brand's images and videos for each event |
+| **Events** (top nav) | Create events with dates; edit or delete them |
 | **Brand kit** | Auto (built from logos and colors) or your own uploaded ZIP |
 | **Settings** | Home page texts, footer, contact email, the "Download all" ZIP |
 | **Account** | Change email or password, see and sign out sessions |
@@ -201,6 +209,16 @@ Sign in at [`/admin/`](https://parselab-brand.vercel.app/admin/). There's one ad
 - **Brand kit, Manual:** upload your own ZIP (up to 50 MB, straight to storage). Its content must really be a ZIP; it's saved as `<slug>-brand-kit.zip`. Switching back to Auto rebuilds the kit and deletes the uploaded one. Without a kit, the public "Download kit" button stays hidden.
 - **Settings, site texts:** home title (also the home page's `<title>`), subtitle, footer text and contact email. Saving updates the public pages at once.
 - **Settings, all-brands kit** (the home page's "Download all"): **Auto** zips every public brand's logos and colors, a folder per brand. **Manual** takes your own ZIP, saved as `parselab-brand-kits.zip`.
+
+</details>
+
+<details>
+<summary><strong>Animations and events</strong></summary>
+
+- **Animations:** name one, upload its video (MP4 or MOV, up to 50 MB). In the background ffmpeg makes an MP4 with sound (H.264/AAC, up to 1920 px, starts playing before it has loaded), the same without sound, a WebM (VP9), a GIF (640 px, 20 fps) and a still from the last moment for the preview. The page plays it muted and looping, with Pause and sound buttons; "Download all animations" zips every format.
+- **Events** are shared by every brand and made on the top-level Events page: a name (its URL, `/events/<key>/`, never changes), optional dates and a description. Between the dates the event shows "Live now" (decided in the visitor's browser, since cached pages don't know today's date).
+- In a brand's **Events** tab, add images (SVG, PNG, JPEG or WebP; an SVG also gets a PNG) or videos (same formats as animations) to each event. Files are named `<brand>-<event>-<item>.<ext>`.
+- Brand pages never link to the event pages (they don't name other brands); the home page does. Deleting an event deletes every brand's items in it.
 
 </details>
 
@@ -294,6 +312,7 @@ The end-to-end suites run against a real build on port 4173 (`pnpm build && pnpm
 | `pnpm test:typography` | Coming soon, publishing a typeface, the headings/body rule, weights |
 | `pnpm test:usage` | Markdown, the safety rules, Do / Don't images, clean-up |
 | `pnpm test:kit` | Auto kit contents, Rebuild now, a 20 MB manual ZIP, back to Auto |
+| `pnpm test:media` | Animations and events: the four video formats, sound, GIF size, event images, dates and live badges, event pages, deletes |
 | `pnpm test:settings` | Site texts everywhere, validation, "Download all" in both modes |
 | `pnpm test:parity` | Pixel-compares every page in both themes against a reference build (`REF_URL`) |
 

@@ -4,6 +4,8 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { BrandHero } from "@/components/brand/BrandHero";
 import { PaletteSection } from "@/components/colors/PaletteSection";
 import { LogoSection } from "@/components/logos/LogoSection";
+import { AnimationsSection } from "@/components/media/AnimationsSection";
+import { EventsSection } from "@/components/media/EventsSection";
 import { ComingSoonCard, Section } from "@/components/sections/Section";
 import { Footer } from "@/components/shell/Footer";
 import { TocChips, TocSidebar, type TocItem } from "@/components/shell/Toc";
@@ -54,6 +56,9 @@ export default async function BrandPage({ params }: Props) {
   // Labels match the section headings word for word.
   const toc: TocItem[] = [
     { id: "logos", label: "Logos", ...(variants ? { count: variants } : { soon: true }) },
+    // Animations and Events only appear once there's something in them.
+    ...(brand.animations.length ? [{ id: "animations", label: "Animations", count: brand.animations.length }] : []),
+    ...(brand.events.length ? [{ id: "events", label: "Events", count: brand.events.length }] : []),
     { id: "colors", label: "Colors", ...(colors ? { count: colors } : { soon: true }) },
     { id: "typography", label: "Typography", ...(brand.typography ? { count: brand.typography.typefaces.length } : { soon: true }) },
     { id: "usage", label: "Usage guidelines", ...(brand.usage ? {} : { soon: true }) },
@@ -77,6 +82,9 @@ export default async function BrandPage({ params }: Props) {
                 <ComingSoonCard icon={Images} text="Logo files will be published here." />
               </Section>
             )}
+
+            {brand.animations.length > 0 && <AnimationsSection items={brand.animations} zip={brand.animationsZip} />}
+            {brand.events.length > 0 && <EventsSection events={brand.events} />}
 
             <Section id="colors" title="Colors" subtitle={colors ? COLORS_SUBTITLE : "Brand colors and their values."}>
               {brand.palettes.length && brand.colorFiles ? (

@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useCallback, useState } from "react";
 import { withBase } from "@/lib/paths";
 import type { BrandCardView, CardThumb } from "@/lib/view";
+import { LiveEventBadge } from "../media/LiveBadge";
 import { Chip } from "../ui/Chip";
 
 /** Card logo: skeleton until loaded, then a fade-in. Catches images that loaded before hydration. */
@@ -78,6 +79,7 @@ export function BrandCard({ brand }: { brand: BrandCardView }) {
         <div className="flex items-center gap-2">
           <h2 className="text-h3">{brand.name}</h2>
           {brand.status === "soon" && <Chip>Soon</Chip>}
+          {brand.events.length > 0 && <LiveEventBadge events={brand.events} />}
         </div>
         <p className="mt-1 line-clamp-2 text-small text-pretty text-muted">{brand.description}</p>
         {/* Pinned to the bottom so meta rows and arrows line up across cards. */}

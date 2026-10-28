@@ -172,7 +172,66 @@ try {
   const svgLinks = await links("Vector icon");
   check(svgLinks.map((l) => l.text.split(" ")[0]).join() === "SVG,PNG", "the SVG item offers SVG and PNG");
 
+  console.log("Public pages");
+  await go("/admin/", `select[aria-label="Status of ${NAME}"]`);
+  await page.select(`select[aria-label="Status of ${NAME}"]`, "LIVE");
+  await toast(`${NAME}: Live`);
+  // Make the event live today, so the badges show.
+  const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const today = new Date();
+  await go("/admin/events/", `section[aria-label="${EVENT}"] button[type=submit]`);
+  await page.$$eval(`section[aria-label="${EVENT}"] input[type=date]`, (els, [a, b]) => {
+    const set = (el, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, v); el.dispatchEvent(new Event("input", { bubbles: true })); };
+    set(els[0], a);
+    set(els[1], b);
+  }, [ymd(new Date(today.getTime() - 864e5)), ymd(new Date(today.getTime() + 864e5))]);
+  await page.click(`section[aria-label="${EVENT}"] button[type=submit]`);
+  check(await toast("Event saved"), "move the event's dates to include today");
+
+  const pub = await (await browser.createBrowserContext()).newPage();
+  pub.on("pageerror", (e) => errors.push(`public: ${e.message}`));
+  await pub.setViewport({ width: 1280, height: 900 });
+  await pub.goto(`${BASE}/${SLUG}/`, { waitUntil: "networkidle0" });
+  const toc = await pub.$$eval("nav a[href^='#']", (as) => [...new Set(as.map((a) => a.getAttribute("href")))]);
+  check(toc.includes("#animations") && toc.includes("#events"), `the table of contents lists Animations and Events (${toc.join(" ")})`);
+  const tabs = await pub.$$eval("#animations [role=tab]", (t) => t.map((x) => x.textContent.trim()));
+  check(tabs.join() === "Intro,Logo reveal v2", `a tab per animation, in order: ${tabs.join(", ")}`);
+  const playing = await pub.waitForFunction(() => { const v = document.querySelector("#animations video"); return v && !v.paused && v.muted; }, { timeout: 15000 }).then(() => true).catch(() => false);
+  check(playing, "the animation plays, muted");
+  check(!(await pub.$("#animations button[aria-label='Turn sound on']")), "no sound button for a video without sound");
+  await pub.click("#animations [role=tab]:last-child");
+  await pub.waitForSelector("#animations button[aria-label='Turn sound on']");
+  await pub.click("#animations button[aria-label='Turn sound on']");
+  check(await pub.$eval("#animations video", (v) => !v.muted), "sound turns on");
+  await pub.click("#animations button[aria-label^='Pause']");
+  check(await pub.$eval("#animations video", (v) => v.paused), "and it can be paused");
+  const zipHref = await pub.$eval("#animations a[href*='-animations.zip']", (a) => a.href).catch(() => null);
+  const zip = zipHref ? (await head(zipHref)).bytes : Buffer.alloc(0);
+  const zipList = zip.toString("latin1");
+  check(zipHref && ["mp4/", "mp4-no-sound/", "webm/", "gif/"].every((d) => zipList.includes(d)), "Download all animations: a ZIP with a folder per format");
+  await pub.click("#animations [aria-label='More download formats']");
+  const menu = await pub.$$eval("#animations [role=menuitem]", (els) => els.map((e) => e.getAttribute("aria-label")));
+  check(menu.length === 4 && menu[0].startsWith("MP4, With sound") && menu[3].startsWith("GIF, 640 × 360"), `the format menu: ${menu.map((m) => m.split(",")[0]).join(", ")}`);
+  await pub.keyboard.press("Escape");
+
+  const events = await pub.$eval("#events", (s) => s.textContent);
+  check(events.includes(EVENT) && events.includes("App icon") && events.includes("Vector icon"), "the Events section shows the event's items");
+  check(await pub.waitForFunction(() => document.querySelector("#events")?.textContent.includes("Live now"), { timeout: 5000 }).then(() => true).catch(() => false), "with a Live now badge while it's on");
+  check(!(await pub.$(`#events a[href*='/events/']`)), "and no link to other brands (brand pages stand alone)");
+
+  await pub.goto(`${BASE}/`, { waitUntil: "networkidle0" });
+  const strip = await pub.$eval(`nav[aria-label="Events"]`, (n) => n.textContent).catch(() => "(no strip)");
+  check(strip.includes(EVENT), `the home page links to the event${strip.includes(EVENT) ? "" : ` (saw: ${strip})`}`);
+  check(await pub.waitForFunction((n, e) => [...document.querySelectorAll("main ul a")].find((a) => a.textContent.includes(n))?.textContent.includes(e), { timeout: 5000 }, NAME, EVENT).then(() => true).catch(() => false), "the brand's card shows the live event");
+  await pub.goto(`${BASE}/events/${EVENT_KEY}/`, { waitUntil: "networkidle0" });
+  check((await pub.$eval("main", (m) => m.textContent)).includes(NAME) && !!(await pub.$(`main a[href$="/${SLUG}/"]`)), "the event page lists the brand, linked to its page");
+  check((await pub.$$("main article")).length === 2, "with its items");
+  await pub.goto(`${BASE}/events/`, { waitUntil: "networkidle0" });
+  check(!!(await pub.$(`main a[href$="/events/${EVENT_KEY}/"]`)), "the events index links to it");
+  await pub.close();
+
   console.log("Delete");
+  await go(eventsTab, row("Vector icon"));
   await page.click(`${row("Vector icon")} ::-p-text(Delete)`);
   await page.waitForSelector("dialog[open]");
   await page.click("dialog[open] button[type=submit]");
@@ -187,6 +246,7 @@ try {
   await page.click("dialog[open] button[type=submit]");
   check(await toast(`${EVENT} deleted · 1 file removed`), "delete the event with its items");
   check(!(await inStorage(iconLinks[0].href)), "its files are gone from storage");
+  check((await fetch(`${BASE}/events/${EVENT_KEY}/`)).status === 404, "and its page is a 404");
 } finally {
   await deleteTestEvent().catch(() => {});
   await cleanup().catch(() => {});
