@@ -1,7 +1,7 @@
 /** Brand URL slugs: /<slug>/. Shared by the admin forms (live hints) and the server (the rules). */
 
 /** Paths the site itself uses, or might: never a brand. */
-export const RESERVED_SLUGS = ["admin", "api", "files", "login", "_next", "brands", "static", "assets", "robots", "favicon", "sitemap"];
+export const RESERVED_SLUGS = ["admin", "api", "files", "login", "_next", "brands", "static", "assets", "robots", "favicon", "sitemap", "events"];
 export const MAX_SLUG = 48;
 
 /** "ProductsModel" → "productsmodel", "Jewels & Co." → "jewels-and-co". */

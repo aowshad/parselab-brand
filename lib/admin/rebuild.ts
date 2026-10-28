@@ -26,9 +26,10 @@ const PNG_COLS = ["png512Id", "png1024Id", "png2048Id", "png4096Id"] as const;
 const SIZE: Record<(typeof PNG_COLS)[number], number> = { png512Id: 512, png1024Id: 1024, png2048Id: 2048, png4096Id: 4096 };
 
 /** Public pages read files through cached data; expire it now (not stale-while-revalidate). */
-function expirePublic(...slugs: string[]) {
+export function expirePublic(...slugs: string[]) {
   revalidateTag(CACHE_TAGS.brands, { expire: 0 });
   revalidateTag(CACHE_TAGS.settings, { expire: 0 });
+  revalidateTag(CACHE_TAGS.events, { expire: 0 });
   for (const s of slugs) revalidateTag(CACHE_TAGS.brand(s), { expire: 0 });
 }
 
@@ -43,7 +44,7 @@ type Get = (f: FileObject) => Promise<Buffer>;
  * Deletes replaced zips once this request has finished. Next applies revalidateTag at the end of
  * the request, so deleting sooner would leave public pages linking to a missing file meanwhile.
  */
-function deleteAfterResponse(ids: (string | null | undefined)[]) {
+export function deleteAfterResponse(ids: (string | null | undefined)[]) {
   after(() => deleteFiles(ids).catch((e) => console.error("Deleting replaced zips failed:", e)));
 }
 
@@ -253,7 +254,7 @@ export async function rebuildAllKit(): Promise<void> {
  * handler may expire the public cache (revalidateTag), code running after a server action may
  * not. after() keeps the function alive until that request finishes.
  */
-async function runInBackground(body: { brandId?: string }) {
+export async function runInBackground(body: { brandId?: string; mediaItemId?: string }) {
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");

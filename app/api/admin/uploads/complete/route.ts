@@ -12,7 +12,7 @@ import { publicUrl } from "@/lib/storage-url";
  * file, sniffs and sanitizes it, stores the result under a new key and returns its FileObject.
  * The ticket is single-use and only honored for 2 minutes; the staged copy is always deleted.
  */
-export const maxDuration = 60; // a manual brand kit can be up to 50 MB
+export const maxDuration = 60; // a manual brand kit or a video can be up to 50 MB
 
 export async function POST(req: Request) {
   if (!(await getCurrentAdmin())) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const base = ticket.fileName.replace(/\.[^.]*$/, "") || "file";
     const file = await storeFile({
       brandId: ticket.brandId,
-      kind: ({ "brand-icon": "icon", "logo-variant": "logos", "usage-image": "usage", "kit-zip": "zips", "site-kit-zip": "zips" } as Record<string, string>)[ticket.purpose] ?? "uploads",
+      kind: ({ "brand-icon": "icon", "logo-variant": "logos", "usage-image": "usage", "kit-zip": "zips", "site-kit-zip": "zips", "media-video": "media", "media-image": "media" } as Record<string, string>)[ticket.purpose] ?? "uploads",
       name: `${base}.${EXT[checked.kind]}`,
       bytes: checked.bytes,
       mime: MIME[checked.kind],

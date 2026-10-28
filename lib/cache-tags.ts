@@ -7,4 +7,6 @@ export const CACHE_TAGS = {
   brands: "brands",
   brand: (slug: string) => `brand:${slug}`,
   settings: "settings",
+  /** Event pages and every brand's Events section. */
+  events: "events",
 } as const;

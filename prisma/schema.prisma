@@ -75,6 +75,9 @@ model Brand {
   logoTypes        LogoType[]
   colors           Color[]
   redirects        BrandRedirect[]
+  media            MediaItem[]
+  /// "Download all animations": the Animations section's videos in every format, one ZIP.
+  animationsZipFileId String?
   updatedAt        DateTime    @updatedAt
   createdAt        DateTime    @default(now())
 
@@ -189,6 +192,64 @@ model BrandRedirect {
 
 // ── Site ────────────────────────────────────────────────────────────────────────────────
 
+// ── Animations and events ───────────────────────────────────────────────────────────────
+
+/// A season or campaign shared by every brand ("Halloween 2026"); each brand adds its own items.
+/// One per year, so last year's stays as an archive.
+model Event {
+  id          String      @id @default(cuid())
+  /// URL: /events/<key>/, e.g. "halloween-2026".
+  key         String      @unique
+  name        String
+  description String      @default("")
+  /// While today is within these dates (inclusive) the event shows a "Live now" badge.
+  startsOn    DateTime?   @db.Date
+  endsOn      DateTime?   @db.Date
+  items       MediaItem[]
+  createdAt   DateTime    @default(now())
+}
+
+/// An animation or an event logo. Without an event it belongs to the brand's Animations
+/// section (videos only). The admin uploads one file; the other formats are made from it.
+model MediaItem {
+  id           String    @id @default(cuid())
+  brandId      String
+  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  eventId      String?
+  event        Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  kind         MediaKind
+  /// Unique within the brand; names the downloads: <brand>-<key>.mp4
+  key          String
+  name         String
+  description  String    @default("")
+  sortOrder    Int       @default(0)
+  /// IMAGE: the uploaded file (SVG, PNG, JPEG or WebP), plus a PNG when it's an SVG.
+  imageFileId  String?
+  pngFileId    String?
+  /// VIDEO: the upload, kept only until its formats are made.
+  sourceFileId String?
+  /// VIDEO: MP4 with sound, the same without sound, WebM, GIF, and a still for the preview.
+  mp4FileId    String?
+  silentFileId String?
+  webmFileId   String?
+  gifFileId    String?
+  posterFileId String?
+  width        Int?
+  height       Int?
+  durationMs   Int?
+  hasAudio     Boolean   @default(false)
+  /// Set when a video is uploaded, cleared when its formats are ready (the same stamp rules as
+  /// Brand.assetsStaleAt: a run only commits if the stamp hasn't moved).
+  processingAt DateTime?
+  /// Why the last processing failed, shown in the admin.
+  error        String?
+  createdAt    DateTime  @default(now())
+
+  @@unique([brandId, key])
+  @@index([brandId, eventId, sortOrder])
+  @@index([eventId])
+}
+
 model SiteSettings {
   id           Int     @id @default(1)
   homeTitle    String  @default("Brand assets")
@@ -211,6 +272,11 @@ enum BrandStatus {
 enum KitMode {
   AUTO
   MANUAL
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
 }
 
 enum ColorKind {

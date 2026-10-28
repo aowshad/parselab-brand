@@ -5,13 +5,13 @@ import { gradientCss, isDark } from "./color";
 import { db } from "./db";
 import { displayImage, type FileRef, type ImageRef, type PngWidth } from "./files";
 import { BRAND_FONTS } from "./fonts";
-import type { BrandStatus, FileObject } from "./generated/prisma/client";
+import type { BrandStatus, Event, FileObject, MediaItem } from "./generated/prisma/client";
 import { typographySchema, type Typeface } from "./schema";
 import { downloadUrl, publicUrl } from "./storage-url";
 import { typeScale } from "./typography";
 import { usageFileIds, type UsageData } from "./usage";
 import { cardVariant, variantPublicId, type Theme } from "./variants";
-import type { BrandCardView, BrandView, CardThumb, ColorView, LogoGroupView, PublicStatus, SiteView, TypographyView, UsageView, VariantView } from "./view";
+import type { BrandCardView, BrandEventView, BrandView, CardThumb, ColorView, EventPageView, EventSummary, LogoGroupView, MediaView, PublicStatus, SiteView, TypographyView, UsageView, VariantView } from "./view";
 
 /*
  * The public site's one data layer. Every read is cached ('use cache') and tagged, so an admin
@@ -143,6 +143,60 @@ function typographyView(b: BrandRow): TypographyView | null {
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
+// ── Animations and events ──────────────────────────────────────────────────────────────
+
+const mediaFileIds = (m: MediaItem) => [m.imageFileId, m.pngFileId, m.mp4FileId, m.silentFileId, m.webmFileId, m.gifFileId, m.posterFileId];
+const IMAGE_FORMAT: Record<string, string> = { "image/svg+xml": "SVG", "image/png": "PNG", "image/jpeg": "JPEG", "image/webp": "WebP" };
+const dims = (f: FileObject) => (f.width && f.height ? `${f.width} × ${f.height}` : "");
+
+/** A finished item for the page; null while its video is still being made (or has no file yet). */
+function mediaView(m: MediaItem, files: Files): MediaView | null {
+  const base = { key: m.key, name: m.name, description: m.description, width: m.width ?? 0, height: m.height ?? 0 };
+  if (m.kind === "VIDEO") {
+    const mp4 = optional(files, m.mp4FileId);
+    const poster = optional(files, m.posterFileId);
+    if (!mp4 || !poster) return null;
+    const silent = optional(files, m.silentFileId);
+    const webm = optional(files, m.webmFileId);
+    const gif = optional(files, m.gifFileId);
+    return {
+      ...base,
+      kind: "video",
+      video: { src: publicUrl(mp4.key), poster: publicUrl(poster.key), durationMs: m.durationMs ?? 0, hasAudio: m.hasAudio },
+      image: null,
+      downloads: [
+        { file: fileRef(mp4), format: "MP4", detail: m.hasAudio ? "With sound" : dims(mp4) },
+        ...(silent ? [{ file: fileRef(silent), format: "MP4", detail: "No sound" }] : []),
+        ...(webm ? [{ file: fileRef(webm), format: "WebM", detail: "Smaller, for websites" }] : []),
+        ...(gif ? [{ file: fileRef(gif), format: "GIF", detail: `${dims(gif)}, no sound` }] : []),
+      ],
+    };
+  }
+  const img = optional(files, m.imageFileId);
+  if (!img) return null;
+  const png = optional(files, m.pngFileId);
+  return {
+    ...base,
+    kind: "image",
+    video: null,
+    image: { src: publicUrl(img.key) },
+    downloads: [
+      { file: fileRef(img), format: IMAGE_FORMAT[img.mime] ?? "File", detail: img.mime === "image/svg+xml" ? "Any size" : dims(img) },
+      ...(png ? [{ file: fileRef(png), format: "PNG", detail: dims(png) }] : []),
+    ],
+  };
+}
+
+const eventSummary = (e: Event): EventSummary => ({
+  key: e.key,
+  name: e.name,
+  description: e.description,
+  startsOn: e.startsOn ? isoDate(e.startsOn) : null,
+  endsOn: e.endsOn ? isoDate(e.endsOn) : null,
+});
+/** Newest first: by start date, else by when the event was created. */
+const byNewest = (a: Event, b: Event) => (b.startsOn ?? b.createdAt).getTime() - (a.startsOn ?? a.createdAt).getTime();
+
 // ── Public reads (cached) ──────────────────────────────────────────────────────────────
 
 /** Home text, footer and site-wide files. */
@@ -180,7 +234,9 @@ export async function getPublishedBrands(): Promise<BrandCardView[]> {
   cacheLife("max");
   cacheTag(CACHE_TAGS.brands);
 
+  cacheTag(CACHE_TAGS.events);
   const brands = await db.brand.findMany({ where: { status: { in: PUBLIC } }, orderBy: { sortOrder: "asc" }, include: brandInclude });
+  const eventItems = await db.mediaItem.findMany({ where: { brandId: { in: brands.map((b) => b.id) }, event: { isNot: null } }, include: { event: true } });
   const files = await loadFiles(brands.flatMap((b) => b.logoTypes.flatMap((t) => t.variants.flatMap((v) => [v.svgFileId, v.png4096Id, v.png2048Id, v.png1024Id, v.png512Id]))));
 
   return brands.map((b) => {
@@ -200,6 +256,7 @@ export async function getPublishedBrands(): Promise<BrandCardView[]> {
       status: toPublic(b.status),
       thumbs: { light: thumb("light"), dark: thumb("dark") },
       counts: { variants: b.logoTypes.reduce((n, t) => n + t.variants.length, 0), colors: b.colors.length },
+      events: [...new Map(eventItems.filter((m) => m.brandId === b.id && m.event).map((m) => [m.event!.id, m.event!])).values()].sort(byNewest).map(eventSummary),
     };
   });
 }
@@ -208,11 +265,21 @@ export async function getPublishedBrands(): Promise<BrandCardView[]> {
 export async function getBrandBySlug(slug: string): Promise<BrandView | null> {
   "use cache";
   cacheLife("max");
-  cacheTag(CACHE_TAGS.brands, CACHE_TAGS.brand(slug));
+  cacheTag(CACHE_TAGS.brands, CACHE_TAGS.brand(slug), CACHE_TAGS.events);
 
   const b = await loadBrandRow(slug);
   if (!b) return null;
-  const [files, site] = await Promise.all([loadFiles([...fileIdsOf(b), ...usageFileIds(b.usage)]), getSiteSettings()]);
+  const media = await db.mediaItem.findMany({ where: { brandId: b.id }, include: { event: true }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] });
+  const [files, site] = await Promise.all([
+    loadFiles([...fileIdsOf(b), ...usageFileIds(b.usage), ...media.flatMap(mediaFileIds), b.animationsZipFileId]),
+    getSiteSettings(),
+  ]);
+  const animations = media.filter((m) => !m.eventId && m.kind === "VIDEO").map((m) => mediaView(m, files)).filter((m): m is MediaView => m !== null);
+  const eventRows = [...new Map(media.filter((m) => m.event).map((m) => [m.event!.id, m.event!])).values()].sort(byNewest);
+  const events: BrandEventView[] = eventRows
+    .map((e) => ({ ...eventSummary(e), items: media.filter((m) => m.eventId === e.id).map((m) => mediaView(m, files)).filter((m): m is MediaView => m !== null) }))
+    .filter((e) => e.items.length);
+  const animationsZip = optional(files, b.animationsZipFileId);
   const u = b.usage as UsageData | null;
   const sideView = (x: { fileId: string | null; caption: string }) => {
     const f = optional(files, x.fileId);
@@ -240,6 +307,9 @@ export async function getBrandBySlug(slug: string): Promise<BrandView | null> {
     typography: typographyView(b),
     usage,
     logoGroups: groups,
+    animations,
+    animationsZip: animations.length && animationsZip ? fileRef(animationsZip) : null,
+    events,
     palettes: colors.length ? [{ name: "Main palette", colors }] : [],
     kit: kit && groups.length ? fileRef(kit) : null,
     colorFiles: css && json && colors.length ? { css: fileRef(css), json: fileRef(json) } : null,
@@ -260,4 +330,39 @@ export async function getRedirectTarget(slug: string): Promise<string | null> {
   cacheTag(CACHE_TAGS.brands, CACHE_TAGS.brand(slug));
   const r = await db.brandRedirect.findUnique({ where: { fromSlug: slug }, select: { brand: { select: { slug: true, status: true } } } });
   return r && PUBLIC.includes(r.brand.status) ? r.brand.slug : null;
+}
+
+/** Events with at least one public brand's item, newest first (the /events/ index). */
+export async function getEvents(): Promise<(EventSummary & { brands: number; items: number })[]> {
+  "use cache";
+  cacheLife("max");
+  cacheTag(CACHE_TAGS.events, CACHE_TAGS.brands);
+  const events = await db.event.findMany({ include: { items: { where: { brand: { status: { in: PUBLIC } } }, select: { brandId: true, mp4FileId: true, imageFileId: true } } } });
+  return events
+    .map((e) => ({ e, ready: e.items.filter((i) => i.mp4FileId || i.imageFileId) }))
+    .filter(({ ready }) => ready.length)
+    .sort((a, b) => byNewest(a.e, b.e))
+    .map(({ e, ready }) => ({ ...eventSummary(e), brands: new Set(ready.map((i) => i.brandId)).size, items: ready.length }));
+}
+
+/** /events/<key>/: every public brand's items in one event, in the home page's brand order. */
+export async function getEventPage(key: string): Promise<EventPageView | null> {
+  "use cache";
+  cacheLife("max");
+  cacheTag(CACHE_TAGS.events, CACHE_TAGS.brands);
+  const e = await db.event.findUnique({
+    where: { key },
+    include: { items: { where: { brand: { status: { in: PUBLIC } } }, include: { brand: { select: { slug: true, name: true, sortOrder: true } } }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] } },
+  });
+  if (!e) return null;
+  const files = await loadFiles(e.items.flatMap(mediaFileIds));
+  const brands = [...new Map(e.items.map((i) => [i.brandId, i.brand])).entries()]
+    .sort(([, a], [, b]) => a.sortOrder - b.sortOrder)
+    .map(([id, brand]) => ({
+      slug: brand.slug,
+      name: brand.name,
+      items: e.items.filter((i) => i.brandId === id).map((i) => mediaView(i, files)).filter((m): m is MediaView => m !== null),
+    }))
+    .filter((b) => b.items.length);
+  return brands.length ? { ...eventSummary(e), brands } : null;
 }

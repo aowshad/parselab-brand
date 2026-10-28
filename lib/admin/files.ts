@@ -59,13 +59,16 @@ export async function copyFile(id: string, toBrandId: string): Promise<FileObjec
 
 /** Every FileObject id some brand, logo, variant or the site settings still points at. */
 export async function referencedFileIds(): Promise<Set<string>> {
-  const [brands, types, variants, site] = await Promise.all([
-    db.brand.findMany({ select: { iconFileId: true, kitFileId: true, colorsCssFileId: true, colorsJsonFileId: true, ogFileId: true, usage: true } }),
+  const [brands, types, variants, site, media] = await Promise.all([
+    db.brand.findMany({ select: { iconFileId: true, kitFileId: true, colorsCssFileId: true, colorsJsonFileId: true, ogFileId: true, animationsZipFileId: true, usage: true } }),
     db.logoType.findMany({ select: { zipFileId: true } }),
     db.logoVariant.findMany({ select: { svgFileId: true, png512Id: true, png1024Id: true, png2048Id: true, png4096Id: true } }),
     db.siteSettings.findMany({ select: { allKitFileId: true, ogFileId: true } }),
+    db.mediaItem.findMany({
+      select: { imageFileId: true, pngFileId: true, sourceFileId: true, mp4FileId: true, silentFileId: true, webmFileId: true, gifFileId: true, posterFileId: true },
+    }),
   ]);
-  const ids = [...brands.map(({ usage, ...b }) => ({ ...b, usage: usageFileIds(usage) })), ...types, ...variants, ...site].flatMap((row) => Object.values(row).flat());
+  const ids = [...brands.map(({ usage, ...b }) => ({ ...b, usage: usageFileIds(usage) })), ...types, ...variants, ...site, ...media].flatMap((row) => Object.values(row).flat());
   return new Set(ids.filter((v): v is string => typeof v === "string"));
 }
 

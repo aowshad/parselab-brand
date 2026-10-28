@@ -11,7 +11,12 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   // Native modules (prebuilt binaries): load them from node_modules instead of bundling them.
-  serverExternalPackages: ["@node-rs/argon2", "sharp"],
+  serverExternalPackages: ["@node-rs/argon2", "sharp", "@ffmpeg-installer/ffmpeg"],
+  // The ffmpeg binary is found by path at runtime, so file tracing can't see it: ship it with
+  // the route that converts videos (Vercel builds on Linux x64).
+  outputFileTracingIncludes: {
+    "/api/internal/rebuild": ["./node_modules/.pnpm/@ffmpeg-installer+linux-x64@*/node_modules/@ffmpeg-installer/linux-x64/**"],
+  },
   env: { NEXT_PUBLIC_BASE_PATH: basePath },
   async headers() {
     return [

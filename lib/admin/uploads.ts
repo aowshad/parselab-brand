@@ -19,7 +19,7 @@ export const KIT_MAX_MB = 50;
 /** Signed upload tickets are honored for this long (Supabase's own URLs last 2 hours). */
 export const TICKET_TTL_MS = 2 * 60 * 1000;
 
-export type Kind = "svg" | "png" | "jpeg" | "webp" | "zip";
+export type Kind = "svg" | "png" | "jpeg" | "webp" | "zip" | "mp4" | "mov";
 export type Purpose = { kinds: Kind[]; maxBytes: number; label: string; square?: boolean };
 
 export const PURPOSES: Record<string, Purpose> = {
@@ -30,12 +30,16 @@ export const PURPOSES: Record<string, Purpose> = {
   "kit-zip": { kinds: ["zip"], maxBytes: KIT_MAX_MB * MB, label: "Brand kit" },
   /** A hand-made "Download all" zip (Settings, Manual mode). Stored under site/, not a brand. */
   "site-kit-zip": { kinds: ["zip"], maxBytes: KIT_MAX_MB * MB, label: "All-brands kit" },
+  /** An animation or event video; the other formats are made from it (lib/admin/media.ts). */
+  "media-video": { kinds: ["mp4", "mov"], maxBytes: KIT_MAX_MB * MB, label: "Video" },
+  /** An event logo or picture, offered for download as it is (an SVG also gets a PNG). */
+  "media-image": { kinds: ["svg", "png", "jpeg", "webp"], maxBytes: 10 * MB, label: "Image" },
 };
 
-export const MIME: Record<Kind, string> = { svg: "image/svg+xml", png: "image/png", jpeg: "image/jpeg", webp: "image/webp", zip: "application/zip" };
+export const MIME: Record<Kind, string> = { svg: "image/svg+xml", png: "image/png", jpeg: "image/jpeg", webp: "image/webp", zip: "application/zip", mp4: "video/mp4", mov: "video/quicktime" };
 /** What browsers may also declare for these types (Windows labels zips differently). */
-export const MIME_ALIASES: Record<Kind, string[]> = { svg: [], png: [], jpeg: ["image/jpg"], webp: [], zip: ["application/x-zip-compressed", "application/x-zip", "multipart/x-zip"] };
-export const EXT: Record<Kind, string> = { svg: "svg", png: "png", jpeg: "jpg", webp: "webp", zip: "zip" };
+export const MIME_ALIASES: Record<Kind, string[]> = { svg: [], png: [], jpeg: ["image/jpg"], webp: [], zip: ["application/x-zip-compressed", "application/x-zip", "multipart/x-zip"], mp4: ["video/x-m4v"], mov: [] };
+export const EXT: Record<Kind, string> = { svg: "svg", png: "png", jpeg: "jpg", webp: "webp", zip: "zip", mp4: "mp4", mov: "mov" };
 
 /** A user-facing reason the upload was refused. */
 export class UploadError extends Error {}
@@ -47,6 +51,8 @@ export function sniff(bytes: Buffer): Kind | null {
   if (bytes.subarray(0, 8).equals(PNG_MAGIC)) return "png";
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpeg";
   if (bytes.subarray(0, 4).toString("latin1") === "RIFF" && bytes.subarray(8, 12).toString("latin1") === "WEBP") return "webp";
+  // ISO media: an `ftyp` box first; QuickTime's brand is "qt  ", everything else plays as MP4.
+  if (bytes.subarray(4, 8).toString("latin1") === "ftyp") return bytes.subarray(8, 12).toString("latin1") === "qt  " ? "mov" : "mp4";
   if (bytes[0] === 0x50 && bytes[1] === 0x4b && (bytes[2] === 0x03 || bytes[2] === 0x05) && (bytes[3] === 0x04 || bytes[3] === 0x06)) return "zip";
   // Text that starts (after an optional BOM, XML declaration, comments and doctype) with <svg.
   const head = bytes.subarray(0, 4096).toString("utf8").replace(/^﻿/, "");
@@ -129,8 +135,9 @@ export async function inspect(purpose: Purpose, bytes: Buffer): Promise<{ kind: 
         })()
       : kind === "png"
         ? { kind, bytes, ...pngSize(bytes) }
-        : kind === "zip"
-          ? { kind, bytes, width: 0, height: 0 }
+        : kind === "zip" || kind === "mp4" || kind === "mov"
+          ? // Videos are measured when their formats are made.
+            { kind, bytes, width: 0, height: 0 }
           : await (async () => {
               const m = await sharp(bytes).metadata().catch(() => null);
               if (!m?.width || !m.height) throw new UploadError("That image couldn't be read. Export it again and retry.");

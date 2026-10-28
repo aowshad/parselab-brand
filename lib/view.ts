@@ -39,6 +39,28 @@ export type PublicStatus = "live" | "soon";
 /** Usage guidelines, with each Do / Don't image resolved to its URL. */
 export type UsageView = { markdown: string; pairs: { do: { src: string | null; caption: string }; dont: { src: string | null; caption: string } }[] };
 
+/** An animation or event item, ready for the page. Only finished items are listed. */
+export type MediaView = {
+  key: string;
+  name: string;
+  description: string;
+  kind: "image" | "video";
+  width: number;
+  height: number;
+  /** Plays muted and looping on the page; `hasAudio` shows the sound toggle. */
+  video: { src: string; poster: string; durationMs: number; hasAudio: boolean } | null;
+  image: { src: string } | null;
+  /** The main download first (MP4 with sound, or the image as uploaded), then the other formats. */
+  downloads: { file: FileRef; format: string; detail: string }[];
+};
+
+/** `startsOn`/`endsOn` are `YYYY-MM-DD`; whether it's live is decided in the browser (it's today's date). */
+export type EventSummary = { key: string; name: string; description: string; startsOn: string | null; endsOn: string | null };
+export type BrandEventView = EventSummary & { items: MediaView[] };
+
+/** /events/<key>/: one event, every public brand's items. */
+export type EventPageView = EventSummary & { brands: { slug: string; name: string; items: MediaView[] }[] };
+
 export type BrandView = {
   slug: string;
   name: string;
@@ -53,6 +75,12 @@ export type BrandView = {
   /** Null shows "Coming soon". */
   usage: UsageView | null;
   logoGroups: LogoGroupView[];
+  /** The Animations section; empty hides it. */
+  animations: MediaView[];
+  /** "Download all animations"; null hides the button. */
+  animationsZip: FileRef | null;
+  /** Events this brand has items in, newest first; empty hides the section. */
+  events: BrandEventView[];
   palettes: PaletteView[];
   /** Null until the brand has logos: hide every "Download kit" button. */
   kit: FileRef | null;
@@ -80,6 +108,8 @@ export type BrandCardView = {
    */
   thumbs: Record<Theme, CardThumb | null>;
   counts: { variants: number; colors: number };
+  /** Events with this brand's items, for the "live now" badge. */
+  events: EventSummary[];
 };
 
 /** Home page text, footer and the site-wide files. */

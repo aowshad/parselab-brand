@@ -8,6 +8,7 @@ import { CACHE_TAGS } from "../cache-tags";
  */
 export function refreshPublic(...slugs: (string | null | undefined)[]) {
   updateTag(CACHE_TAGS.brands);
+  updateTag(CACHE_TAGS.events);
   for (const slug of new Set(slugs)) if (slug) updateTag(CACHE_TAGS.brand(slug));
 }
 
@@ -19,5 +20,6 @@ export const refreshSettings = () => updateTag(CACHE_TAGS.settings);
  */
 export function expirePublic(...slugs: (string | null | undefined)[]) {
   revalidateTag(CACHE_TAGS.brands, { expire: 0 });
+  revalidateTag(CACHE_TAGS.events, { expire: 0 });
   for (const slug of new Set(slugs)) if (slug) revalidateTag(CACHE_TAGS.brand(slug), { expire: 0 });
 }
