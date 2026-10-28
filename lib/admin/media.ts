@@ -53,6 +53,8 @@ async function run(args: string[], { allowFailure = false } = {}): Promise<strin
   return new Promise((resolve, reject) => {
     execFile(bin, ["-hide_banner", "-y", ...args], { timeout: 120_000, maxBuffer: 16 * 1024 * 1024 }, (err, _out, stderr) => {
       if (err && !allowFailure) return reject(new Error(lastLine(stderr) || err.message));
+      // ffmpeg itself missing or not runnable: report that, not a confusing parse failure later.
+      if (err && !stderr) return reject(new Error(`ffmpeg didn't run (${bin}): ${err.message}`));
       resolve(stderr);
     });
   });
@@ -67,7 +69,10 @@ async function probe(file: string): Promise<VideoInfo> {
   const out = await run(["-i", file, "-t", "0", "-f", "null", "-"], { allowFailure: true });
   const d = out.match(/Duration: (\d+):(\d+):(\d+(?:\.\d+)?)/);
   const v = out.match(/Stream #[^\n]*Video:[^\n]*?(\d{2,5})x(\d{2,5})/);
-  if (!d || !v) throw new Error("That video couldn't be read. Export it again as MP4 (H.264) and retry.");
+  if (!d || !v) {
+    console.error("ffmpeg couldn't read the upload:", out.slice(-600));
+    throw new Error("That video couldn't be read. Export it again as MP4 (H.264) and retry.");
+  }
   const rotated = /rotate\s*:\s*-?(90|270)/.test(out) || /rotation of -?(90|270)/.test(out);
   const [w, h] = [Number(v[1]), Number(v[2])];
   return {
