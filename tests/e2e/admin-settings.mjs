@@ -2,7 +2,7 @@
 // and puts the texts back and the zip in Auto mode at the end.
 import fs from "node:fs";
 import { ZipArchive } from "archiver";
-import { BASE, check, done, launch, wait } from "./lib.mjs";
+import { BASE, check, done, goneFromStorage, inStorage, launch, wait, zipNames } from "./lib.mjs";
 
 process.loadEnvFile(".env.local");
 const FIX = "test-results/fixtures";
@@ -37,22 +37,6 @@ async function fill(label, value) {
 }
 const api = (body) => page.evaluate((b) => fetch("/api/admin/settings/", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }).then((r) => r.json()), body);
 const allKitLink = async () => (await html("/")).match(/href="([^"]+parselab-brand-kits\.zip[^"]*)"/)?.[1]?.replace(/&amp;/g, "&") ?? null;
-const inStorage = async (url) => {
-  const key = decodeURIComponent(new URL(url).pathname.replace("/storage/v1/object/public/brand-assets/", ""));
-  const r = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/authenticated/brand-assets/${key}`, { headers: { authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY } });
-  await r.arrayBuffer();
-  return r.ok;
-};
-async function zipNames(url) {
-  const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-  const names = [];
-  for (let i = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06])), off = buf.readUInt32LE(i + 16), n = buf.readUInt16LE(i + 10); n-- > 0; ) {
-    const len = buf.readUInt16LE(off + 28), extra = buf.readUInt16LE(off + 30), comment = buf.readUInt16LE(off + 32);
-    names.push(buf.subarray(off + 46, off + 46 + len).toString("utf8"));
-    off += 46 + len + extra + comment;
-  }
-  return names;
-}
 async function waitRebuilt() {
   for (let i = 0; i < 60; i++) {
     const r = await page.evaluate(() => fetch("/api/admin/settings/", { cache: "no-store" }).then((x) => x.json()));
@@ -114,7 +98,7 @@ try {
   check(await toast("Rebuilding the kit…"), "Rebuild now");
   check(await waitRebuilt(), `the zip is rebuilt (${Math.round((Date.now() - t0) / 1000)}s)`);
   const rebuilt = await allKitLink();
-  check(rebuilt && rebuilt !== before && !(await inStorage(before)), "a new file, and the old one is deleted");
+  check(rebuilt && rebuilt !== before && (await goneFromStorage(before)), "a new file, and the old one is deleted");
 
   console.log("All-brands kit: Manual");
   await go("/admin/settings/", '[role="radio"]');
@@ -125,7 +109,7 @@ try {
   check(await toast("Kit uploaded"), "upload a ZIP");
   const manual = await allKitLink();
   check(manual && /\/site\/zips\/[0-9a-f-]{36}\/parselab-brand-kits\.zip/.test(manual) && (await zipNames(manual)).includes("HAND-MADE.txt"), "Download all serves the uploaded ZIP, under the usual name");
-  check(!(await inStorage(rebuilt)), "the automatic zip it replaced is deleted");
+  check((await goneFromStorage(rebuilt)), "the automatic zip it replaced is deleted");
 
   console.log("Back to Auto");
   await go("/admin/settings/", '[role="radio"]');
@@ -133,7 +117,7 @@ try {
   check(await toast("Auto: rebuilding from the public brands"), "switch back to Auto");
   check(await waitRebuilt(), "the zip is rebuilt from the brands");
   const auto = await allKitLink();
-  check(auto && auto !== manual && (await zipNames(auto)).some((n) => n.startsWith("quotend/")) && !(await inStorage(manual)), "Download all is automatic again, and the uploaded one is deleted");
+  check(auto && auto !== manual && (await zipNames(auto)).some((n) => n.startsWith("quotend/")) && (await goneFromStorage(manual)), "Download all is automatic again, and the uploaded one is deleted");
 } finally {
   if (original) {
     // A failure mid-way: put the texts back through the API.

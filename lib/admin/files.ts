@@ -14,11 +14,13 @@ const newKey = (owner: string, kind: string, name: string) => `${owner}/${kind}/
 const ownerOf = (brandId: string | null) => (brandId ? `brands/${brandId}` : "site");
 
 /**
- * One hour, for CDN and browsers. Keys never change content, but on Supabase's free plan the CDN
- * isn't purged when a file is deleted: a short lifetime makes a deleted file disappear within an
- * hour instead of lingering at its old URL for a year. (Pro's Smart CDN purges on delete.)
+ * Cache lifetime for stored files: a year. Every key is a fresh UUID path that's never
+ * overwritten (a replacement gets a new key), so a file's content never changes and browsers
+ * and the CDN can keep it. Re-downloads were most of the storage egress on the free plan.
+ * Trade-off: on the free plan the CDN isn't purged on delete, so a deleted file can stay
+ * reachable at its old (unguessable) URL until the CDN drops it.
  */
-export const CACHE_SECONDS = "3600";
+export const CACHE_SECONDS = "31536000";
 
 /** Uploads bytes under a new server-generated key and records the FileObject. */
 export async function storeFile(opts: {
@@ -65,7 +67,7 @@ export async function referencedFileIds(): Promise<Set<string>> {
     db.logoVariant.findMany({ select: { svgFileId: true, png512Id: true, png1024Id: true, png2048Id: true, png4096Id: true } }),
     db.siteSettings.findMany({ select: { allKitFileId: true, ogFileId: true } }),
     db.mediaItem.findMany({
-      select: { imageFileId: true, pngFileId: true, sourceFileId: true, mp4FileId: true, silentFileId: true, webmFileId: true, gifFileId: true, posterFileId: true },
+      select: { imageFileId: true, pngFileId: true, previewFileId: true, sourceFileId: true, mp4FileId: true, silentFileId: true, webmFileId: true, gifFileId: true, posterFileId: true },
     }),
   ]);
   const ids = [...brands.map(({ usage, ...b }) => ({ ...b, usage: usageFileIds(usage) })), ...types, ...variants, ...site, ...media].flatMap((row) => Object.values(row).flat());

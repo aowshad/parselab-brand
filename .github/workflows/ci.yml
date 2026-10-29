@@ -6,7 +6,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The full file check (links) runs only by hand or weekly: it reads every download's headers.
   workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1" # Mondays 04:00 UTC
 
 # A newer push to the same branch replaces a run still in progress.
 concurrency:
@@ -51,6 +54,10 @@ jobs:
       - name: Build (Prisma client, type check, prerender)
         run: pnpm build
 
+      # Video, preview and ZIP processing on local files: no database, storage or network.
+      - name: Unit tests
+        run: pnpm test:unit
+
       - name: Start like Vercel's runtime (ES modules can't be require()d)
         run: |
           export SESSION_SECRET="$(openssl rand -base64 32)" CRON_SECRET="$(openssl rand -hex 32)"
@@ -78,6 +85,7 @@ jobs:
         run: node tests/e2e/smoke.mjs
 
       - name: Every page, file and download
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: node tests/e2e/links.mjs
 
       - name: Server log

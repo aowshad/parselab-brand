@@ -1,7 +1,7 @@
 // Phase 3: the Brands list and the General tab, end to end, against the real database and
 // storage. Creates "ProductsModel" (and a copy), exercises everything, then deletes them.
 import fs from "node:fs";
-import { BASE, check, done, launch, wait } from "./lib.mjs";
+import { BASE, check, done, inStorage, launch, wait } from "./lib.mjs";
 
 process.loadEnvFile(".env.local");
 const NAME = "ProductsModel";
@@ -37,12 +37,6 @@ const homeHas = async (name) => (await (await fetch(`${BASE}/`)).text()).include
 const cookieHeader = async () => (await ctx.cookies()).map((c) => `${c.name}=${c.value}`).join("; ");
 const brandId = () => new URL(page.url()).pathname.split("/")[3];
 /** Asks storage itself (not the CDN, which may still hold a cached copy for up to an hour). */
-const inStorage = async (publicUrl) => {
-  const key = new URL(publicUrl).pathname.replace("/storage/v1/object/public/brand-assets/", "");
-  const res = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/authenticated/brand-assets/${key}`, { headers: { authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY } });
-  await res.arrayBuffer();
-  return res.ok;
-};
 
 async function cleanup() {
   // Delete anything this test may have left behind (by name), through the UI's own action.

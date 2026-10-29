@@ -226,6 +226,8 @@ model MediaItem {
   /// IMAGE: the uploaded file (SVG, PNG, JPEG or WebP), plus a PNG when it's an SVG.
   imageFileId  String?
   pngFileId    String?
+  /// IMAGE: a ≤512 px WebP for the page; the original is only fetched on Download.
+  previewFileId String?
   /// VIDEO: the upload, kept only until its formats are made.
   sourceFileId String?
   /// VIDEO: MP4 with sound, the same without sound, WebM, GIF, and a still for the preview.

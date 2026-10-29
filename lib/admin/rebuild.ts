@@ -9,7 +9,7 @@ import { cardVariant, variantPublicId } from "../variants";
 import { deleteFiles, storeFile } from "./files";
 import { OG, brandOgPng } from "./og";
 import { bucket } from "./storage";
-import { zipBuffer } from "./zip";
+import { readZip, zipBuffer } from "./zip";
 
 /*
  * Background rebuilds of the zips: each logo type's, the brand kit (Auto mode) and the site-wide
@@ -214,20 +214,27 @@ export async function markAllKitStale() {
   await db.siteSettings.upsert({ where: { id: 1 }, create: { id: 1, allKitStaleAt: new Date() }, update: { allKitStaleAt: new Date() } });
 }
 
-/** "Download all": every public brand's logos and colors, one folder per brand. */
+/** "Download all": every public brand's kit (logos, colors, README), one folder per brand. */
 export async function rebuildAllKit(): Promise<void> {
   const s = await db.siteSettings.findUnique({ where: { id: 1 } });
   if (!s?.allKitStaleAt || s.allKitMode !== "AUTO") return;
   const stamp = s.allKitStaleAt;
-  const brands = await db.brand.findMany({ where: { status: { in: ["SOON", "LIVE"] } }, orderBy: { sortOrder: "asc" }, select: { id: true } });
+  // Built from each public brand's kit: one download per brand (about half the bytes of reading
+  // every logo file again), each kit unpacked into a folder named after the brand.
+  const brands = await db.brand.findMany({ where: { status: { in: ["SOON", "LIVE"] }, kitFileId: { not: null } }, orderBy: { sortOrder: "asc" }, select: { slug: true, kitFileId: true } });
+  const kits = new Map((await db.fileObject.findMany({ where: { id: { in: brands.map((b) => b.kitFileId!) } } })).map((f) => [f.id, f]));
   const get = downloader();
   const perBrand = await Promise.all(
-    brands.map(async ({ id }) => {
-      const b = await loadBrand(id);
-      if (!b) return [];
-      const files = await filesFor(b);
-      const logos = await variantEntries(b, files, get, `${b.slug}/`);
-      return logos.length ? [...logos, ...(await colorEntries(b, files, get, `${b.slug}/`))] : [];
+    brands.map(async (b) => {
+      const kit = kits.get(b.kitFileId!);
+      if (!kit) return [];
+      const bytes = await get(kit);
+      try {
+        return readZip(bytes).map((e) => ({ name: `${b.slug}/${e.name}`, bytes: e.bytes }));
+      } catch {
+        // A hand-made kit this reader can't unpack goes in as it is.
+        return [{ name: `${b.slug}/${kit.name}`, bytes }];
+      }
     }),
   );
   const entries = perBrand.flat();

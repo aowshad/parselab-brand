@@ -5,7 +5,7 @@ import { plural } from "../format";
 import { slugify } from "../slug";
 import { deleteFiles, renameFile } from "./files";
 import type { OpResult } from "./logo-ops";
-import { pngFromSvg, rebuildAnimationsZip } from "./media";
+import { bytesOf, pngFromSvg, previewOf, rebuildAnimationsZip } from "./media";
 import { runInBackground } from "./rebuild";
 import { expirePublic } from "./revalidate";
 
@@ -18,8 +18,8 @@ import { expirePublic } from "./revalidate";
 export const MEDIA_LIMITS = { name: 60, description: 160, perList: 24 };
 
 const clean = (v: unknown) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "");
-const fileIdsOf = (i: { imageFileId: string | null; pngFileId: string | null; sourceFileId: string | null; mp4FileId: string | null; silentFileId: string | null; webmFileId: string | null; gifFileId: string | null; posterFileId: string | null }) => [
-  i.imageFileId, i.pngFileId, i.sourceFileId, i.mp4FileId, i.silentFileId, i.webmFileId, i.gifFileId, i.posterFileId,
+const fileIdsOf = (i: { imageFileId: string | null; pngFileId: string | null; previewFileId: string | null; sourceFileId: string | null; mp4FileId: string | null; silentFileId: string | null; webmFileId: string | null; gifFileId: string | null; posterFileId: string | null }) => [
+  i.imageFileId, i.pngFileId, i.previewFileId, i.sourceFileId, i.mp4FileId, i.silentFileId, i.webmFileId, i.gifFileId, i.posterFileId,
 ];
 
 async function brandOf(itemId: string) {
@@ -109,9 +109,15 @@ export async function attachUpload(itemId: string, fileId: unknown): Promise<OpR
   if (!file.mime.startsWith("image/")) return { error: "Upload an image (SVG, PNG, JPEG or WebP)." };
   const ext = file.name.split(".").pop()!.toLowerCase();
   const named = await renameFile(file.id, `${base}.${ext}`);
-  const png = named.mime === "image/svg+xml" ? await pngFromSvg(named, item.brandId) : null;
-  await db.mediaItem.update({ where: { id: itemId }, data: { imageFileId: named.id, pngFileId: png?.id ?? null, width: named.width, height: named.height, error: null } });
-  await deleteFiles([item.imageFileId, item.pngFileId]);
+  // One download of the original makes both the PNG (for an SVG) and the page's preview.
+  const bytes = await bytesOf(named);
+  const png = named.mime === "image/svg+xml" ? await pngFromSvg(named, item.brandId, bytes) : null;
+  const preview = await previewOf(named, item.brandId, bytes);
+  await db.mediaItem.update({
+    where: { id: itemId },
+    data: { imageFileId: named.id, pngFileId: png?.id ?? null, previewFileId: preview.id, width: named.width, height: named.height, error: null },
+  });
+  await deleteFiles([item.imageFileId, item.pngFileId, item.previewFileId]);
   expirePublic(item.brand.slug);
   return { ok: png ? "Image added · SVG + PNG" : "Image added" };
 }

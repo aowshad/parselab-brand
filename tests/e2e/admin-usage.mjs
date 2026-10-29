@@ -1,6 +1,6 @@
 // Phase 5: the Usage tab end to end, on a temporary brand "UsageTest" (deleted at the end).
 import fs from "node:fs";
-import { BASE, check, done, launch, wait } from "./lib.mjs";
+import { BASE, check, done, inStorage, launch, wait } from "./lib.mjs";
 
 process.loadEnvFile(".env.local");
 const NAME = "UsageTest";
@@ -26,12 +26,6 @@ const usageSection = async () => {
   const html = await (await fetch(`${BASE}/${SLUG}/`)).text();
   const i = html.indexOf('id="usage"');
   return html.slice(i, html.indexOf("</section>", i));
-};
-const inStorage = async (url) => {
-  const key = new URL(url).pathname.replace("/storage/v1/object/public/brand-assets/", "");
-  const r = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/authenticated/brand-assets/${key}`, { headers: { authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY } });
-  await r.arrayBuffer();
-  return r.ok;
 };
 async function deleteTestBrand() {
   await go("/admin/", "tbody");

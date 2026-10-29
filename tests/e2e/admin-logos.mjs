@@ -1,7 +1,6 @@
 // Phase 4: the Logos tab end to end, on a temporary brand "LogoTest" (deleted at the end).
 import fs from "node:fs";
-import sharp from "sharp";
-import { BASE, check, done, launch, wait } from "./lib.mjs";
+import { BASE, check, done, headInfo, inStorage, launch, pngSize, wait, zipNames } from "./lib.mjs";
 
 process.loadEnvFile(".env.local");
 const NAME = "LogoTest";
@@ -31,23 +30,7 @@ const toastIs = async (text, timeout = 30000) => {
 };
 const expectToast = async (text, label) => { const t = await toastIs(text); check(t === text, `${label}${t === text ? "" : ` (saw "${t}")`}`); };
 const cell = (type, slot) => `article[aria-label="${type}, ${slot}"]`;
-const inStorage = async (url) => {
-  const key = new URL(url).pathname.replace("/storage/v1/object/public/brand-assets/", "");
-  const r = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/authenticated/brand-assets/${key}`, { headers: { authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY } });
-  await r.arrayBuffer();
-  return r.ok;
-};
 /** File names inside a zip, read from its central directory. */
-async function zipNames(url) {
-  const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-  const names = [];
-  for (let i = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06])), off = buf.readUInt32LE(i + 16), n = buf.readUInt16LE(i + 10); n-- > 0; ) {
-    const len = buf.readUInt16LE(off + 28), extra = buf.readUInt16LE(off + 30), comment = buf.readUInt16LE(off + 32);
-    names.push(buf.subarray(off + 46, off + 46 + len).toString("utf8"));
-    off += 46 + len + extra + comment;
-  }
-  return names;
-}
 async function waitRebuilt(timeoutMs = 90000) {
   const t0 = Date.now();
   while (Date.now() - t0 < timeoutMs) {
@@ -192,24 +175,28 @@ try {
   const groupHref = await pub.$eval('a[aria-label^="Download all Wordmark files"]', (a) => a.href).catch(() => "");
   check(groupHref && (await zipNames(groupHref)).every((n) => !n.includes("mark-light-bg")), "each logo type has its own ZIP");
   await pub.close();
-  // "Download all" is rebuilt in the background too.
-  let all = [];
-  for (let i = 0; i < 45 && !all.some((n) => n.startsWith(`${SLUG}/`)); i++) {
-    const home = await (await fetch(`${BASE}/`)).text();
-    const href = home.match(/href="([^"]+parselab-brand-kits\.zip[^"]*)"/)?.[1]?.replace(/&amp;/g, "&");
-    if (href) all = await zipNames(href);
-    if (!all.some((n) => n.startsWith(`${SLUG}/`))) await wait(2000);
+  // "Download all" is rebuilt in the background too. Wait on the admin's status APIs (small JSON,
+  // no storage), then read the ZIP's file list once.
+  const idle = () => page.evaluate(async (brandId) => {
+    const [brand, site] = await Promise.all([fetch(`/api/admin/brands/${brandId}/status/`).then((r) => r.json()), fetch("/api/admin/settings/").then((r) => r.json())]);
+    return !brand.rebuilding && !site.rebuilding;
+  }, id);
+  for (let i = 0, calm = 0; i < 60 && calm < 2; i++) {
+    calm = (await idle()) ? calm + 1 : 0;
+    await wait(2000);
   }
+  const home = await (await fetch(`${BASE}/`)).text();
+  const allHref = home.match(/href="([^"]+parselab-brand-kits\.zip[^"]*)"/)?.[1]?.replace(/&amp;/g, "&");
+  const all = allHref ? await zipNames(allHref) : [];
   check(all.some((n) => n === `${SLUG}/svg/${SLUG}-wordmark.svg`) && all.some((n) => n.startsWith("parselab/")), `Download all now includes ${NAME} (${all.length} files)`);
 
   console.log("Link preview");
   const ogUrl = (await (await fetch(`${BASE}/${SLUG}/`)).text()).match(/<meta property="og:image" content="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&");
   check(ogUrl && /\/brands\/[^/]+\/og\/[0-9a-f-]{36}\//.test(ogUrl) && ogUrl.includes(`/${SLUG}-og.png`), "the brand gets its own preview image (not the site-wide one)");
   if (ogUrl) {
-    const img = sharp(Buffer.from(await (await fetch(ogUrl)).arrayBuffer()));
-    const { width, height } = await img.metadata();
-    const { channels } = await img.stats();
-    check(width === 1200 && height === 630 && channels.some((c) => c.stdev > 5), `it's 1200×630 and shows the logo (${width}×${height})`);
+    // Size from the header; a blank 1200 × 630 PNG compresses to a few KB, one with a logo doesn't.
+    const { width, height, bytes } = await pngSize(ogUrl);
+    check(width === 1200 && height === 630 && bytes > 15000, `it's 1200×630 and shows the logo (${width}×${height}, ${Math.round(bytes / 1024)} KB)`);
   }
   const ogFiles = (await (await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/list/brand-assets`, {
     method: "POST",

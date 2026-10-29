@@ -4,7 +4,7 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import sharp from "sharp";
-import { BASE, check, done, launch, wait } from "./lib.mjs";
+import { BASE, check, done, gifInfo, headInfo, inStorage, launch, wait, zipNames } from "./lib.mjs";
 
 process.loadEnvFile(".env.local");
 const NAME = "MediaTest";
@@ -31,16 +31,6 @@ const hydrated = (sel) => page.waitForFunction((s) => { const el = document.quer
 const go = async (path, ready) => (await page.goto(BASE + path, { waitUntil: "load" }), ready && (await hydrated(ready)));
 const toast = (text) => page.waitForFunction((t) => document.querySelector("[data-toast-region]")?.textContent.trim().startsWith(t), { timeout: 60000 }, text).then(() => true).catch(() => false);
 const row = (name) => `li[aria-label="${name}"]`;
-const head = async (url) => {
-  const r = await fetch(url);
-  return { ok: r.ok, type: r.headers.get("content-type"), bytes: Buffer.from(await r.arrayBuffer()) };
-};
-const inStorage = async (url) => {
-  const key = decodeURIComponent(new URL(url).pathname.replace("/storage/v1/object/public/brand-assets/", ""));
-  const r = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/authenticated/brand-assets/${key}`, { headers: { authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY } });
-  await r.arrayBuffer();
-  return r.ok;
-};
 async function addItem(label, name, kind) {
   await page.type(`input[aria-label="${label}: name"]`, name);
   if (kind) await page.select(`select[aria-label="${label}: type"]`, kind);
@@ -116,10 +106,11 @@ try {
   check((await page.$eval(row("Logo reveal"), (li) => li.textContent)).includes("1280 × 720 · 3.0 s · with sound"), "size, length and sound are read from the video");
   const files = await links("Logo reveal");
   check(files.map((f) => f.text.replace(/\s[\d.]+\s?[KM]B$/, "")).join() === "MP4,MP4, no sound,WebM,GIF", `four downloads: ${files.map((f) => f.text).join(" · ")}`);
-  const fetched = await Promise.all(files.map((f) => head(f.href)));
+  // Headers only: the content itself is checked on local files by the unit tests (tests/unit).
+  const fetched = await Promise.all(files.map((f) => headInfo(f.href)));
   check(fetched.every((f) => f.ok) && fetched.map((f) => f.type).join() === "video/mp4,video/mp4,video/webm,image/gif", "each one downloads with the right type");
-  const gif = await sharp(fetched[3].bytes, { animated: true }).metadata();
-  check(gif.width === 640 && (gif.pageHeight ?? gif.height) === 360 && gif.pages > 10, `the GIF is 640 × 360 and animated (${gif.pages} frames)`);
+  const gif = await gifInfo(files[3].href);
+  check(gif.type.startsWith("GIF") && gif.width === 640 && gif.height === 360 && gif.animated, `the GIF is 640 × 360 and animated`);
   check(files.every((f) => new URL(f.href).searchParams.get("download")?.startsWith(`${SLUG}-logo-reveal`)), "files are named after the brand and the animation");
 
   await addItem("Animations", "Intro");
@@ -206,9 +197,8 @@ try {
   await pub.click("#animations button[aria-label^='Pause']");
   check(await pub.$eval("#animations video", (v) => v.paused), "and it can be paused");
   const zipHref = await pub.$eval("#animations a[href*='-animations.zip']", (a) => a.href).catch(() => null);
-  const zip = zipHref ? (await head(zipHref)).bytes : Buffer.alloc(0);
-  const zipList = zip.toString("latin1");
-  check(zipHref && ["mp4/", "mp4-no-sound/", "webm/", "gif/"].every((d) => zipList.includes(d)), "Download all animations: a ZIP with a folder per format");
+  const zipList = zipHref ? (await zipNames(zipHref)).join("\n") : "";
+  check(zipHref && ["mp4/", "mp4-no-sound/", "webm/", "gif/"].every((d) => zipList.includes(`\n${d}`) || zipList.startsWith(d)), "Download all animations: a ZIP with a folder per format");
   await pub.click("#animations [aria-label='More download formats']");
   const menu = await pub.$$eval("#animations [role=menuitem]", (els) => els.map((e) => e.getAttribute("aria-label")));
   check(menu.length === 4 && menu[0].startsWith("MP4, With sound") && menu[3].startsWith("GIF, 640 × 360"), `the format menu: ${menu.map((m) => m.split(",")[0]).join(", ")}`);
@@ -216,6 +206,9 @@ try {
 
   const events = await pub.$eval("#events", (s) => s.textContent);
   check(events.includes(EVENT) && events.includes("App icon") && events.includes("Vector icon"), "the Events section shows the event's items");
+  const cardImages = await pub.$$eval("#events article img", (imgs) => imgs.map((i) => i.src));
+  const previews = await Promise.all(cardImages.map((u) => headInfo(u)));
+  check(cardImages.length === 2 && cardImages.every((u) => u.endsWith("-preview.webp")) && previews.every((p) => p.type === "image/webp" && p.size < 60000), `cards show small WebP previews, not the originals (${previews.map((p) => Math.round(p.size / 1024) + " KB").join(", ")})`);
   check(await pub.waitForFunction(() => document.querySelector("#events")?.textContent.includes("Live now"), { timeout: 5000 }).then(() => true).catch(() => false), "with a Live now badge while it's on");
   check(!(await pub.$(`#events a[href*='/events/']`)), "and no link to other brands (brand pages stand alone)");
 
@@ -235,7 +228,7 @@ try {
   await page.click(`${row("Vector icon")} ::-p-text(Delete)`);
   await page.waitForSelector("dialog[open]");
   await page.click("dialog[open] button[type=submit]");
-  check(await toast("Vector icon deleted · 2 files removed"), "delete an item: its SVG and PNG go too");
+  check(await toast("Vector icon deleted · 3 files removed"), "delete an item: its SVG, PNG and preview go too");
   check(!(await inStorage(svgLinks[0].href)), "and are gone from storage");
   await go("/admin/events/", `section[aria-label="${EVENT}"]`);
   check((await page.$eval(`section[aria-label="${EVENT}"]`, (s) => s.textContent)).includes("1 item from 1 brand"), "the Events page counts items and brands");
@@ -244,7 +237,7 @@ try {
   check(await page.$eval("dialog[open] button[type=submit]", (b) => b.disabled), "deleting an event with items needs its name typed");
   await page.type("dialog[open] input", EVENT);
   await page.click("dialog[open] button[type=submit]");
-  check(await toast(`${EVENT} deleted · 1 file removed`), "delete the event with its items");
+  check(await toast(`${EVENT} deleted · 2 files removed`), "delete the event with its items (an image and its preview)");
   check(!(await inStorage(iconLinks[0].href)), "its files are gone from storage");
   check((await fetch(`${BASE}/events/${EVENT_KEY}/`)).status === 404, "and its page is a 404");
 } finally {

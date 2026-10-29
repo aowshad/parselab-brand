@@ -145,7 +145,7 @@ const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 // ── Animations and events ──────────────────────────────────────────────────────────────
 
-const mediaFileIds = (m: MediaItem) => [m.imageFileId, m.pngFileId, m.mp4FileId, m.silentFileId, m.webmFileId, m.gifFileId, m.posterFileId];
+const mediaFileIds = (m: MediaItem) => [m.imageFileId, m.pngFileId, m.previewFileId, m.mp4FileId, m.silentFileId, m.webmFileId, m.gifFileId, m.posterFileId];
 const IMAGE_FORMAT: Record<string, string> = { "image/svg+xml": "SVG", "image/png": "PNG", "image/jpeg": "JPEG", "image/webp": "WebP" };
 const dims = (f: FileObject) => (f.width && f.height ? `${f.width} × ${f.height}` : "");
 
@@ -175,11 +175,13 @@ function mediaView(m: MediaItem, files: Files): MediaView | null {
   const img = optional(files, m.imageFileId);
   if (!img) return null;
   const png = optional(files, m.pngFileId);
+  // The card shows the small WebP; the original is only fetched when someone downloads it.
+  const preview = optional(files, m.previewFileId);
   return {
     ...base,
     kind: "image",
     video: null,
-    image: { src: publicUrl(img.key) },
+    image: { src: publicUrl((preview ?? img).key) },
     downloads: [
       { file: fileRef(img), format: IMAGE_FORMAT[img.mime] ?? "File", detail: img.mime === "image/svg+xml" ? "Any size" : dims(img) },
       ...(png ? [{ file: fileRef(png), format: "PNG", detail: dims(png) }] : []),

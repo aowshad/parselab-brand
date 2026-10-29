@@ -21,13 +21,14 @@ export type AdminMediaItem = {
 const LABEL: Record<string, string> = { "video/mp4": "MP4", "video/webm": "WebM", "image/gif": "GIF", "image/svg+xml": "SVG", "image/png": "PNG", "image/jpeg": "JPEG", "image/webp": "WebP" };
 
 export async function adminMediaItems(items: MediaItem[]): Promise<AdminMediaItem[]> {
-  const ids = items.flatMap((m) => [m.imageFileId, m.pngFileId, m.mp4FileId, m.silentFileId, m.webmFileId, m.gifFileId, m.posterFileId]).filter((x): x is string => Boolean(x));
+  const ids = items.flatMap((m) => [m.imageFileId, m.pngFileId, m.previewFileId, m.mp4FileId, m.silentFileId, m.webmFileId, m.gifFileId, m.posterFileId]).filter((x): x is string => Boolean(x));
   const files = new Map((ids.length ? await db.fileObject.findMany({ where: { id: { in: ids } } }) : []).map((f) => [f.id, f]));
   const get = (id: string | null) => (id ? files.get(id) : undefined);
   return items.map((m) => {
     const mp4 = get(m.mp4FileId);
     const poster = get(m.posterFileId);
     const image = get(m.imageFileId);
+    const preview = get(m.previewFileId) ?? image;
     const listed = m.kind === "VIDEO" ? [m.mp4FileId, m.silentFileId, m.webmFileId, m.gifFileId] : [m.imageFileId, m.pngFileId];
     const info =
       m.kind === "VIDEO" && m.durationMs
@@ -42,7 +43,7 @@ export async function adminMediaItems(items: MediaItem[]): Promise<AdminMediaIte
       description: m.description,
       processing: Boolean(m.processingAt),
       error: m.error,
-      preview: m.kind === "VIDEO" ? (mp4 && poster ? { video: publicUrl(mp4.key), poster: publicUrl(poster.key) } : null) : image ? { image: publicUrl(image.key) } : null,
+      preview: m.kind === "VIDEO" ? (mp4 && poster ? { video: publicUrl(mp4.key), poster: publicUrl(poster.key) } : null) : preview ? { image: publicUrl(preview.key) } : null,
       info,
       files: listed
         .map(get)

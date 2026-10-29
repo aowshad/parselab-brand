@@ -4,7 +4,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import { ZipArchive } from "archiver";
-import { BASE, check, done, launch, wait } from "./lib.mjs";
+import { BASE, check, done, inStorage, launch, wait, zipInfo } from "./lib.mjs";
 
 process.loadEnvFile(".env.local");
 const NAME = "KitTest";
@@ -37,22 +37,6 @@ const hydrated = (sel) => page.waitForFunction((s) => { const el = document.quer
 const go = async (path, ready) => (await page.goto(BASE + path, { waitUntil: "load" }), ready && (await hydrated(ready)));
 const toast = (text) => page.waitForFunction((t) => document.querySelector("[data-toast-region]")?.textContent.trim() === t, { timeout: 60000 }, text).then(() => true).catch(() => false);
 const main = () => page.$eval("main", (m) => m.textContent);
-const inStorage = async (url) => {
-  const key = decodeURIComponent(new URL(url).pathname.replace("/storage/v1/object/public/brand-assets/", ""));
-  const r = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/authenticated/brand-assets/${key}`, { headers: { authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY } });
-  await r.arrayBuffer();
-  return r.ok;
-};
-async function zipNames(url) {
-  const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-  const names = [];
-  for (let i = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06])), off = buf.readUInt32LE(i + 16), n = buf.readUInt16LE(i + 10); n-- > 0; ) {
-    const len = buf.readUInt16LE(off + 28), extra = buf.readUInt16LE(off + 30), comment = buf.readUInt16LE(off + 32);
-    names.push(buf.subarray(off + 46, off + 46 + len).toString("utf8"));
-    off += 46 + len + extra + comment;
-  }
-  return { names, size: buf.length };
-}
 async function waitKitReady(tab) {
   for (let i = 0; i < 45; i++) {
     await go(tab, "main");
@@ -96,7 +80,7 @@ try {
   await toast("On light added · SVG + 4 PNGs");
   check(await waitKitReady(tab), "the kit builds in the background");
   const autoUrl = await page.$eval("main a[href*='brand-kit.zip']", (a) => a.href);
-  const auto = await zipNames(autoUrl);
+  const auto = await zipInfo(autoUrl);
   check(auto.names[0] === "README.txt" && auto.names.includes(`svg/${SLUG}-full-light-bg.svg`) && auto.names.includes(`png/4096/${SLUG}-full-light-bg@4096.png`), `Auto kit: README.txt, svg/ and png/<width>/ (${auto.names.length} files)`);
   check((await main()).includes("1 logo · 0 colors"), "the tab says what it contains");
   await page.click("::-p-text(Rebuild now)");
@@ -121,7 +105,7 @@ try {
   const pub = await (await fetch(`${BASE}/${SLUG}/`)).text();
   const pubKit = pub.match(/href="([^"]+brand-kit\.zip[^"]*)"[^>]*download/)?.[1]?.replace(/&amp;/g, "&");
   check(/aria-label="Download kit, 20\.\d MB"/.test(pub) && pubKit,"the public Download kit shows the uploaded kit and its size");
-  const manual = pubKit ? await zipNames(pubKit) : { names: [], size: 0 };
+  const manual = pubKit ? await zipInfo(pubKit) : { names: [], size: 0 };
   check(manual.names.includes("assets/random.bin") && manual.size > 20e6, "and serves exactly that file");
 
   console.log("Back to Auto");

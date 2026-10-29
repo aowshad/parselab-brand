@@ -1,6 +1,6 @@
 // Crawls every public page: each linked or embedded file must load, assets must come from
 // Supabase Storage, and downloads must save under their real file name.
-import { BASE, check, done, launch, open, publishedBrands, publishedEvents, revealAll } from "./lib.mjs";
+import { BASE, check, done, headInfo, launch, open, publishedBrands, publishedEvents, revealAll } from "./lib.mjs";
 
 const STORAGE = process.env.STORAGE_ORIGIN ?? "https://gthtvjnxmfsgitvnsvor.supabase.co";
 const browser = await launch();
@@ -44,12 +44,12 @@ check(assets.every((u) => /\/[0-9a-f-]{36}\/[A-Za-z0-9._%@-]+\.(svg|png|zip|css|
 
 const bad = [];
 for (const [u, { kind, name }] of refs) {
-  const res = await fetch(u);
-  await res.arrayBuffer();
+  // One byte, not the file: status and the download name come from the headers.
+  const res = await headInfo(u);
   if (res.status !== 200) { bad.push(`${res.status} ${u}`); continue; }
   if (kind === "download") {
     // The name the browser will use: the header's filename*, else filename, else the URL's last segment.
-    const cd = res.headers.get("content-disposition") ?? "";
+    const cd = res.disposition;
     const m = cd.match(/filename\*=UTF-8''([^;]+)/) ?? cd.match(/filename="?([^";]+)"?/);
     const saved = decodeURIComponent(m ? m[1] : new URL(u).pathname.split("/").pop());
     if (!cd.includes("attachment") || saved !== name) bad.push(`saves as ${saved}, not ${name} (${cd || "no Content-Disposition"})`);

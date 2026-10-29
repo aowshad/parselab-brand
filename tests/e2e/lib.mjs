@@ -62,3 +62,78 @@ export async function revealAll(page) {
   await page.evaluate(() => document.fonts.ready);
   await wait(500);
 }
+
+// ── Storage checks without downloading files ──────────────────────────────────────────────
+// Supabase egress is metered, so the suites read headers or a few KB, never whole ZIPs or videos.
+
+/**
+ * Status, type, size and download name, from a one-byte request. (Supabase leaves the download
+ * name out of HEAD responses; a `bytes=0-0` range has every header for one byte of body.)
+ */
+export async function headInfo(url) {
+  const r = await fetch(url, { headers: { range: "bytes=0-0" } });
+  await r.arrayBuffer();
+  const ok = r.status === 206 || r.status === 200;
+  const size = Number(r.headers.get("content-range")?.split("/")[1] ?? r.headers.get("content-length") ?? 0);
+  return { ok, status: ok ? 200 : r.status, type: r.headers.get("content-type"), size, disposition: r.headers.get("content-disposition") ?? "" };
+}
+
+/** Waits (up to 20 s) for a file to leave storage: replaced files are deleted after the response. */
+export async function goneFromStorage(publicUrl) {
+  for (let i = 0; i < 20; i++) {
+    if (!(await inStorage(publicUrl))) return true;
+    await wait(1000);
+  }
+  return false;
+}
+
+const rangeOf = async (url, range) => {
+  const r = await fetch(url, { headers: { range } });
+  if (r.status !== 206) throw new Error(`No partial content for ${url} (${r.status})`);
+  return { bytes: Buffer.from(await r.arrayBuffer()), total: Number(r.headers.get("content-range")?.split("/")[1] ?? 0) };
+};
+
+/** A ZIP's file names and total size, read from its central directory (the last few KB). */
+export async function zipInfo(url) {
+  const tail = await rangeOf(url, "bytes=-65536");
+  const eocd = tail.bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  if (eocd < 0) throw new Error(`Not a ZIP: ${url}`);
+  const count = tail.bytes.readUInt16LE(eocd + 10);
+  const cdSize = tail.bytes.readUInt32LE(eocd + 12);
+  const cdOffset = tail.bytes.readUInt32LE(eocd + 16);
+  const tailStart = tail.total - tail.bytes.length;
+  // The directory is usually inside the tail already; a very long one needs its own range.
+  const cd = cdOffset >= tailStart ? tail.bytes.subarray(cdOffset - tailStart) : (await rangeOf(url, `bytes=${cdOffset}-${cdOffset + cdSize - 1}`)).bytes;
+  const names = [];
+  for (let i = 0, off = 0; i < count; i++) {
+    const len = cd.readUInt16LE(off + 28), extra = cd.readUInt16LE(off + 30), comment = cd.readUInt16LE(off + 32);
+    names.push(cd.subarray(off + 46, off + 46 + len).toString("utf8"));
+    off += 46 + len + extra + comment;
+  }
+  return { names, size: tail.total };
+}
+export const zipNames = async (url) => (await zipInfo(url)).names;
+
+/** A GIF's size and whether it's animated (at least two frames in its first 64 KB). */
+export async function gifInfo(url) {
+  const { bytes } = await rangeOf(url, "bytes=0-65535");
+  let frames = 0;
+  for (let i = bytes.indexOf(Buffer.from([0x21, 0xf9])); i >= 0; i = bytes.indexOf(Buffer.from([0x21, 0xf9]), i + 2)) frames++;
+  return { type: bytes.subarray(0, 6).toString("latin1"), width: bytes.readUInt16LE(6), height: bytes.readUInt16LE(8), animated: frames >= 2 };
+}
+
+/** A PNG's size, from its header (the first 33 bytes). */
+export async function pngSize(url) {
+  const { bytes, total } = await rangeOf(url, "bytes=0-32");
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20), bytes: total };
+}
+
+/** Whether a public file still exists in storage (the origin, not the CDN's cache), by HEAD. */
+export async function inStorage(publicUrl) {
+  const key = decodeURIComponent(new URL(publicUrl).pathname.replace("/storage/v1/object/public/brand-assets/", ""));
+  const r = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/authenticated/brand-assets/${key}`, {
+    method: "HEAD",
+    headers: { authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY },
+  });
+  return r.ok;
+}
