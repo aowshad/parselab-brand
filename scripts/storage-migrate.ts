@@ -29,12 +29,14 @@ async function download(key: string): Promise<Buffer> {
   return Buffer.from(await data.arrayBuffer());
 }
 
-/** max-age from the stored object's headers (HEAD: no body is downloaded). */
+/**
+ * The stored Cache-Control's max-age, from the object's info (no body is downloaded). Not from
+ * a HEAD on the private endpoint: that always answers "private, no-cache".
+ */
 async function maxAge(key: string): Promise<number | null> {
-  const url = `${process.env.SUPABASE_URL}/storage/v1/object/authenticated/${process.env.SUPABASE_BUCKET ?? "brand-assets"}/${key.split("/").map(encodeURIComponent).join("/")}`;
-  const r = await fetch(url, { method: "HEAD", headers: { authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, apikey: process.env.SUPABASE_SERVICE_ROLE_KEY! } });
-  if (!r.ok) return null;
-  const m = (r.headers.get("cache-control") ?? "").match(/max-age=(\d+)/);
+  const { data, error } = await bucket().info(key);
+  if (error || !data) return null;
+  const m = String(data.cacheControl ?? "").match(/max-age=(\d+)/);
   return m ? Number(m[1]) : 0;
 }
 
